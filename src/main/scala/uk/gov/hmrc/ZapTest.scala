@@ -120,6 +120,7 @@ trait ZapTest extends WordSpec {
     relevantAlerts.foreach { alert: ZapAlert =>
       println("***********************************")
       println(s"URL:         ${alert.url}")
+      println(s"CWE ID:      ${alert.cweid}")
       println(s"Alert Name:  ${alert.alert}")
       println(s"Description: ${alert.description}")
       println(s"Risk Level:  ${alert.risk}")
