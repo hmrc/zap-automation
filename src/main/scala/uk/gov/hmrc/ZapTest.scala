@@ -31,7 +31,7 @@ trait ZapTest extends WordSpec {
   val alertsToIgnore: List[ZapAlertFilter] = List.empty
   val zapBaseUrl: String
   val testUrl: String
-  val theClient = new InsecureClient
+  lazy val theClient = new InsecureClient
   val contextBaseUrl: String = ".*"
   val alertsBaseUrl: String = ""
   var policyName: String = ""
@@ -39,7 +39,8 @@ trait ZapTest extends WordSpec {
   val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
 
   def callZapApiTo(url: String): (Int, String) = {
-    val theResponse = theClient.getRawResponse(zapBaseUrl + url)
+    val baseUrl = if (!zapBaseUrl.endsWith("/")) zapBaseUrl + "/" else zapBaseUrl
+    val theResponse = theClient.getRawResponse(baseUrl + url)
     val statusCode = theResponse._1
     if (statusCode != 200) fail(s"The ZAP API returned a $statusCode status when you called it using: $url")
     theResponse

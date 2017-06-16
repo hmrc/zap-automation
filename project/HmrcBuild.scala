@@ -65,22 +65,15 @@ private object AppDependencies {
     lazy val test: Seq[ModuleID] = ???
   }
 
-//  object Test {
-//    def apply() = new TestDependencies {
-//      override lazy val test = Seq(
-////        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-////        "com.typesafe.play" %% "play-specs2" % PlayVersion.current % scope,
-//        "commons-codec" % "commons-codec" % "1.7" % scope,
-//        "org.scalatest" %% "scalatest" % "2.2.4" % scope,
-//        "org.scalacheck" %% "scalacheck" % "1.12.2" % scope,
-//        "org.pegdown" % "pegdown" % "1.5.0" % scope,
-//        "com.github.tomakehurst" % "wiremock" % "1.52" % scope,
-//        "uk.gov.hmrc" %% "http-verbs-test" % "1.1.0" % scope,
-//        "ch.qos.logback" % "logback-core" % "1.1.7",
-//        "ch.qos.logback" % "logback-classic" % "1.1.7"
-//      )
-//    }.test
-//  }
+  object Test {
+    def apply() = new TestDependencies {
+      override lazy val test = Seq(
+        "org.mockito" % "mockito-core" % "2.8.9" % "test"
+      )
+    }.test
+  }
 
-  def apply() = compile //++ Test()
+
+
+  def apply() = compile ++ Test()
 }
