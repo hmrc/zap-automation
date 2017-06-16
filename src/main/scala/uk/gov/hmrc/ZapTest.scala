@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.integration.utils
+package uk.gov.hmrc
 
 import java.util.UUID
 import org.json4s.JsonAST.JObject
@@ -152,7 +152,7 @@ trait ZapTest extends WordSpec {
 
   "Inspecting the alerts" should {
     "not find any unknown alerts" in {
-      val allAlerts: List[ZapAlert] = theClient.get[ZapAlerts](zapBaseUrl + s"/json/core/view/alerts").alerts
+      val allAlerts: List[ZapAlert] = theClient.get[ZapAlerts](zapBaseUrl + s"/json/core/view/alerts/?baseurl=$alertsBaseUrl").alerts
 
       val relevantAlerts = allAlerts.filterNot(zapAlert => alertsToIgnore.contains(zapAlert.getFilter))
 
