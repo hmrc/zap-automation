@@ -91,7 +91,6 @@ trait ZapTest extends WordSpec {
     }
 
     if(routeToBeIgnoredFromContext.nonEmpty) {
-      println("***********************************EXCLUDING A ROUTE FROM THE CONTEXT")
       val excludeRouteFromContext = s"json/context/action/excludeFromContext/?contextName=$contextName&regex=$routeToBeIgnoredFromContext"
       callZapApiTo(excludeRouteFromContext)
     }
