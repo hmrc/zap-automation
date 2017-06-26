@@ -139,10 +139,21 @@ trait ZapTest extends WordSpec {
 
   }
 
-  def filterAlerts(): List[ZapAlert] = {
+  def filterAlerts2(): List[ZapAlert] = {
     val baseUrl = appendSlashToBaseUrlIfNeeded()
     val allAlerts: List[ZapAlert] = theClient.get[ZapAlerts](baseUrl + s"json/core/view/alerts/?baseurl=$alertsBaseUrl").alerts
     val relevantAlerts = allAlerts.filterNot(zapAlert => alertsToIgnore.contains(zapAlert.getFilter))
+    relevantAlerts
+  }
+
+  def filterAlerts(): List[ZapAlert] = {
+    val baseUrl = appendSlashToBaseUrlIfNeeded()
+    val alerts = theClient.get[ZapAlerts](baseUrl + s"json/core/view/alerts/?baseurl=$alertsBaseUrl")
+    val allAlerts: List[ZapAlert] = alerts.alerts
+    val relevantAlerts = allAlerts.filterNot{zapAlert =>
+      val filter = zapAlert.getFilter
+      alertsToIgnore.contains(filter)
+    }
     relevantAlerts
   }
 

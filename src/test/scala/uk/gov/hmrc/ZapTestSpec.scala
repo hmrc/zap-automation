@@ -30,55 +30,6 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
   val insecureClientMock: InsecureClient = mock[InsecureClient]
   private val jsonStatus = """{"status": "100"}"""
-  private val jsonAlert = """{
-                            |"alerts": [
-                            |{
-                            |"sourceid": "3",
-                            |"other": "This issue still applies to error type pages (401, 403, 500, etc)",
-                            |"method": "POST",
-                            |"evidence": "",
-                            |"pluginId": "10021",
-                            |"cweid": "16",
-                            |"confidence": "Medium",
-                            |"wascid": "15",
-                            |"description": "A description",
-                            |"messageId": "4132",
-                            |"url": "http://beccy.com/",
-                            |"reference": "http://msdn.microsoft.com/en-us/library",
-                            |"solution": "The solution",
-                            |"alert": "X-Content-Type-Options Header Missing",
-                            |"param": "X-Content-Type-Options",
-                            |"attack": "",
-                            |"name": "X-Content-Type-Options Header Missing",
-                            |"risk": "Low",
-                            |"id": "14"
-                            |},
-                            |{
-                            |"sourceid": "3",
-                            |"other": "This issue still applies to error type pages (401, 403, 500, etc)",
-                            |"method": "POST",
-                            |"evidence": "",
-                            |"pluginId": "10021",
-                            |"cweid": "16",
-                            |"confidence": "Medium",
-                            |"wascid": "15",
-                            |"description": "A description",
-                            |"messageId": "4132",
-                            |"url": "http://ocsp.digicert.com/",
-                            |"reference": "http://msdn.microsoft.com/en-us/library",
-                            |"solution": "The solution",
-                            |"alert": "X-Content-Type-Options Header Missing",
-                            |"param": "X-Content-Type-Options",
-                            |"attack": "",
-                            |"name": "X-Content-Type-Options Header Missing",
-                            |"risk": "Low",
-                            |"id": "14"
-                            |}"""
-
-  private val alertsObjects: List[ZapAlert] = List()
-  val alert1: ZapAlert = ZapAlert("", "", "", "16", "", "", "", "", "http://beccy.com", "", "", "", "", "", "", "", "")
-  val alert2: ZapAlert = ZapAlert("", "", "", "16", "", "", "", "", "http://dawn.com", "", "", "", "", "", "", "", "")
-  val alerts: List[ZapAlert] = List(alert1, alert2)
 
   val zapTest = new ZapTest {
     override lazy val theClient: InsecureClient = insecureClientMock
@@ -211,18 +162,15 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
     }
   }
-
-
-//Todo: Ask Armin for help to make this work on MONDAY
+  
   describe("filterAlerts") {
 
     it("should filter out ignored alerts") {
-      when(insecureClientMock.get(any())(any())).thenReturn(jsonAlert)
-      zapTest.filterAlerts()
-      alerts.size shouldBe 1
+      when(insecureClientMock.get(any())(any())).thenReturn(ZapAlerts(List(ZapAlert(url = "http://beccy.com/", cweid = "16"), ZapAlert(url = "http://other.url", cweid = "20"))))
+      val filteredAlerts: List[ZapAlert] = zapTest.filterAlerts()
+      filteredAlerts.size shouldBe 1
 
     }
   }
-
 
 }
