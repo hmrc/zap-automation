@@ -26,8 +26,6 @@ import uk.gov.hmrc.utils.{InsecureClient, TestHelper}
 
 trait ZapTest extends WordSpec {
 
-  //Todo: Change the json library: do this after we create a library
-
   val alertsToIgnore: List[ZapAlertFilter] = List.empty
   val zapBaseUrl: String
   val testUrl: String
@@ -35,18 +33,19 @@ trait ZapTest extends WordSpec {
   val contextBaseUrl: String = ".*"
   val alertsBaseUrl: String = ""
   var policyName: String = ""
-  var context: Context = null
+  var context: Context = _
   val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
+  val routeToBeIgnoredFromContext: String = ""
 
   def appendSlashToBaseUrlIfNeeded(): String = {
     if (!zapBaseUrl.endsWith("/")) zapBaseUrl + "/" else zapBaseUrl
   }
 
   def callZapApiTo(url: String): (Int, String) = {
-    val baseUrl: String = appendSlashToBaseUrlIfNeeded()
-    val theResponse = theClient.getRawResponse(baseUrl + url)
+    val completeUrl: String = appendSlashToBaseUrlIfNeeded() + url
+    val theResponse = theClient.getRawResponse(completeUrl)
     val statusCode = theResponse._1
-    if (statusCode != 200) fail(s"The ZAP API returned a $statusCode status when you called it using: $url")
+    if (statusCode != 200) fail(s"The ZAP API returned a $statusCode status when you called it using: $completeUrl")
     theResponse
   }
 
@@ -76,16 +75,26 @@ trait ZapTest extends WordSpec {
     val createContext = s"json/context/action/newContext/?contextName=$contextName"
     val createContextResponse = JsonParser.parse(callZapApiTo(createContext)._2).asInstanceOf[JObject]
     val contextId = createContextResponse.values("contextId").toString
-    new Context(contextName, contextId)
+    Context(contextName, contextId)
   }
 
   def setUpContext(contextName: String): Unit = {
     val limitContextToABaseUrl = s"json/context/action/includeInContext/?contextName=$contextName&regex=$contextBaseUrl"
     callZapApiTo(limitContextToABaseUrl)
+
     val excludeAllTechnologiesFromContext = s"json/context/action/excludeAllContextTechnologies/?contextName=$contextName"
     callZapApiTo(excludeAllTechnologiesFromContext)
-    val includeDesiredTechnologiesInContext = s"json/context/action/includeContextTechnologies/?contextName=$contextName&technologyNames=$desiredTechnologyNames"
-    callZapApiTo(includeDesiredTechnologiesInContext)
+
+    if(desiredTechnologyNames.nonEmpty) {
+      val includeDesiredTechnologiesInContext = s"json/context/action/includeContextTechnologies/?contextName=$contextName&technologyNames=$desiredTechnologyNames"
+      callZapApiTo(includeDesiredTechnologiesInContext)
+    }
+
+    if(routeToBeIgnoredFromContext.nonEmpty) {
+      val excludeRouteFromContext = s"json/context/action/excludeFromContext/?contextName=$contextName&regex=$routeToBeIgnoredFromContext"
+      callZapApiTo(excludeRouteFromContext)
+    }
+
   }
 
   def tearDown(contextName: String, policyName: String): Unit = {
@@ -139,13 +148,6 @@ trait ZapTest extends WordSpec {
 
   }
 
-  def filterAlerts2(): List[ZapAlert] = {
-    val baseUrl = appendSlashToBaseUrlIfNeeded()
-    val allAlerts: List[ZapAlert] = theClient.get[ZapAlerts](baseUrl + s"json/core/view/alerts/?baseurl=$alertsBaseUrl").alerts
-    val relevantAlerts = allAlerts.filterNot(zapAlert => alertsToIgnore.contains(zapAlert.getFilter))
-    relevantAlerts
-  }
-
   def filterAlerts(): List[ZapAlert] = {
     val baseUrl = appendSlashToBaseUrlIfNeeded()
     val alerts = theClient.get[ZapAlerts](baseUrl + s"json/core/view/alerts/?baseurl=$alertsBaseUrl")
@@ -185,7 +187,7 @@ trait ZapTest extends WordSpec {
 
   "Tearing down the policy, context and alerts" should {
     "complete successfully" in {
-      //tearDown(context.name, policyName)
+      tearDown(context.name, policyName)
     }
   }
 }

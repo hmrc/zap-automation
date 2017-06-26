@@ -64,7 +64,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
       try {
         zapTest.callZapApiTo("someInvalidUrl")
       } catch {
-        case e: TestFailedException => e.getMessage() shouldBe "The ZAP API returned a 404 status when you called it using: someInvalidUrl"
+        case e: TestFailedException => e.getMessage() shouldBe "The ZAP API returned a 404 status when you called it using: http://zap.url.com/someInvalidUrl"
       }
 
     }
@@ -76,13 +76,13 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
     it("should return true if status is 100"){
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, jsonStatus))
       val answer = zapTest.hasCallCompleted("someUrl")
-      answer shouldBe(true)
+      answer shouldBe true
     }
 
     it("should return false if status is not 100"){
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "{\n\"status\": \"99\"\n}"))
       val answer = zapTest.hasCallCompleted("someUrl")
-      answer shouldBe(false)
+      answer shouldBe false
     }
   }
 
@@ -92,7 +92,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "{\n\"contextId\": \"2\"\n}"))
 
       val context: Context = zapTest.createContext()
-      context.id shouldBe("2")
+      context.id shouldBe "2"
     }
   }
 
@@ -112,7 +112,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
     it("should call the Zap API to create the policy") {
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "the-response"))
-      val policyName = zapTest.createPolicy
+      val policyName = zapTest.createPolicy()
 
       verify(insecureClientMock).getRawResponse(contains("http://zap.url.com/json/ascan/action/addScanPolicy/?scanPolicyName="), any())(any())
       policyName should not be null
@@ -162,7 +162,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
     }
   }
-  
+
   describe("filterAlerts") {
 
     it("should filter out ignored alerts") {
