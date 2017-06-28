@@ -120,17 +120,6 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
     }
   }
 
-  describe("reportAlerts") {
-
-    it("should call Zap API to create HTML report of alerts") {
-      when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "the-response"))
-      val relevantAlerts: List[ZapAlert] = List.empty
-      zapTest.reportAlerts(relevantAlerts)
-      verify(insecureClientMock).getRawResponse(eqTo("http://zap.url.com/OTHER/core/other/htmlreport"), any())(any())
-
-    }
-  }
-
   describe("runAndCheckStatusOfSpider") {
 
     it("should call Zap API to run the spider scan") {

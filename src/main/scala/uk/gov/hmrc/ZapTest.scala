@@ -125,13 +125,24 @@ trait ZapTest extends WordSpec {
   def writeHtmlReportToFile(text: String): File = {
     val file = new File("ZapReport.html")
     val bw = new BufferedWriter(new FileWriter(file))
+    bw.write("<html>\n")
+    bw.write("<head><style>table {\n      font-family: arial, sans-serif;\n    border-collapse: collapse;\n    width: 100%;\n    }td, th {\n    border: 1px solid #dddddd;\n    text-align: left;\n    padding: 8px;\n    }\n\n    tr:nth-child(even) {\n    background-color: #dddddd;\n    }\n</style>")
+    bw.write("<title>HMRC Digital: Custom ZAP Report</title>\n")
+    bw.write("<h1>HMRC ZAP Report</h1>\n")
+    bw.write("</head>\n")
+    bw.write("<body>\n <table>\n<tr> <th> URL </th> <th> Description </th> <th> Risk Level </th> <th> Evidence </th></tr>")
     bw.write(text)
+    bw.write("</table>\n</body>\n")
+    bw.write("</html>\n")
     bw.close()
     file
   }
 
   def reportAlerts(relevantAlerts: List[ZapAlert]): Unit = {
+    var text: String = ""
+
     relevantAlerts.foreach { alert: ZapAlert =>
+      text = text + "<tr> <td>" + alert.url + "</td><td>" + alert.description + "</td><td>" + alert.risk + "</td><td> " + xml.Utility.escape(alert.evidence) + "</td></tr>\n"
       println("***********************************")
       println(s"URL:         ${alert.url}")
       println(s"CWE ID:      ${alert.cweid}")
@@ -141,8 +152,6 @@ trait ZapTest extends WordSpec {
       println(s"Evidence:    ${alert.evidence.take(100).trim}...")
     }
 
-    val getHtmlReport = "OTHER/core/other/htmlreport"
-    val text = callZapApiTo(getHtmlReport)._2
     val filePath = writeHtmlReportToFile(text).getCanonicalPath
     println(Console.BOLD + s"For more information on alerts, please see the html report at $filePath")
 
