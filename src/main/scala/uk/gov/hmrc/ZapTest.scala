@@ -196,7 +196,7 @@ trait ZapTest extends WordSpec {
 
   "Tearing down the policy, context and alerts" should {
     "complete successfully" in {
-      tearDown(context.name, policyName)
+      //tearDown(context.name, policyName)
     }
   }
 }
