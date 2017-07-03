@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito
+import org.mockito.Matchers.any
+import org.mockito.Matchers.contains
+import org.mockito.Matchers.{eq => eqTo}
+import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
-import org.mockito.{ArgumentMatchers, Mockito}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FunSpec, Matchers}
 import uk.gov.hmrc.utils.InsecureClient
-import ArgumentMatchers.{eq => eqTo}
-import ArgumentMatchers.contains
 import org.scalatest.exceptions.TestFailedException
 
 class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
