@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.Matchers.any
+import org.mockito.Matchers.contains
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito.{verify, when}
-import org.mockito.{ArgumentMatchers, Mockito}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FunSpec, Matchers}
 import uk.gov.hmrc.utils.InsecureClient
-import ArgumentMatchers.{eq => eqTo}
-import ArgumentMatchers.contains
 import org.scalatest.exceptions.TestFailedException
 
 class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
@@ -155,10 +154,55 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
   describe("filterAlerts") {
 
     it("should filter out ignored alerts") {
-      //Todo: uncomment this out later when everything else is fixed
-      //when(insecureClientMock.get(any())(any())).thenReturn(ZapAlerts(List(ZapAlert(url = "http://beccy.com/", cweid = "16"), ZapAlert(url = "http://other.url", cweid = "20"))))
-      //val filteredAlerts: List[ZapAlert] = zapTest.filterAlerts()
-      //filteredAlerts.size shouldBe 1
+      when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, """{
+                                                                                      "alerts": [
+                                                                                      {
+                                                                                      "sourceid": "3",
+                                                                                      "other": "This issue still applies to error type pages (401, 403, 500, etc) as those pages are often still affected by injection issues, in which case there is still concern for browsers sniffing pages away from their actual content type.\nAt \"High\" threshold this scanner will not alert on client or server error responses.",
+                                                                                      "method": "POST",
+                                                                                      "evidence": "",
+                                                                                      "pluginId": "10021",
+                                                                                      "cweid": "16",
+                                                                                      "confidence": "Medium",
+                                                                                      "wascid": "15",
+                                                                                      "description": "The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing.",
+                                                                                      "messageId": "22447",
+                                                                                      "url": "https://shavar.services.mozilla.com/downloads?client=navclient-auto-ffox&appver=46.0.1&pver=2.2",
+                                                                                      "reference": "http://msdn.microsoft.com/en-us/library/ie/gg622941%28v=vs.85%29.aspx\nhttps://www.owasp.org/index.php/List_of_useful_HTTP_headers",
+                                                                                      "solution": "Ensure that the application/web server sets the Content-Type header appropriately, and that it sets the X-Content-Type-Options header to 'nosniff' for all web pages.\nIf possible, ensure that the end user uses a standards-compliant and modern web browser that does not perform MIME-sniffing at all, or that can be directed by the web application/web server to not perform MIME-sniffing.",
+                                                                                      "alert": "X-Content-Type-Options Header Missing",
+                                                                                      "param": "X-Content-Type-Options",
+                                                                                      "attack": "",
+                                                                                      "name": "X-Content-Type-Options Header Missing",
+                                                                                      "risk": "Low",
+                                                                                      "id": "5510"
+                                                                                      },
+                                                                                      {
+                                                                                       "sourceid": "3",
+                                                                                       "other": "This issue still applies to error type pages (401, 403, 500, etc) as those pages are often still affected by injection issues, in which case there is still concern for browsers sniffing pages away from their actual content type.\nAt \"High\" threshold this scanner will not alert on client or server error responses.",
+                                                                                       "method": "POST",
+                                                                                       "evidence": "",
+                                                                                       "pluginId": "10021",
+                                                                                       "cweid": "16",
+                                                                                       "confidence": "Medium",
+                                                                                       "wascid": "15",
+                                                                                      "description": "The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing.",
+                                                                                       "messageId": "22447",
+                                                                                       "url": "http://beccy.com/",
+                                                                                       "reference": "http://msdn.microsoft.com/en-us/library/ie/gg622941%28v=vs.85%29.aspx\nhttps://www.owasp.org/index.php/List_of_useful_HTTP_headers",
+                                                                                       "solution": "Ensure that the application/web server sets the Content-Type header appropriately, and that it sets the X-Content-Type-Options header to 'nosniff' for all web pages.\nIf possible, ensure that the end user uses a standards-compliant and modern web browser that does not perform MIME-sniffing at all, or that can be directed by the web application/web server to not perform MIME-sniffing.",
+                                                                                       "alert": "X-Content-Type-Options Header Missing",
+                                                                                       "param": "X-Content-Type-Options",
+                                                                                       "attack": "",
+                                                                                       "name": "X-Content-Type-Options Header Missing",
+                                                                                       "risk": "Low",
+                                                                                       "id": "5510"
+                                                                                      }
+                                                                                      ]
+                                                                                      }"""))
+
+      val filteredAlerts = zapTest.filterAlerts()
+      filteredAlerts.size shouldBe 1
 
     }
   }

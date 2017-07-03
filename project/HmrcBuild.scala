@@ -65,7 +65,7 @@ private object AppDependencies {
       override lazy val test = Seq(
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "com.typesafe.play" %% "play-specs2" % PlayVersion.current % scope,
-        "org.mockito" % "mockito-core" % "2.8.9" % "test"
+        "org.mockito" % "mockito-all" % "1.10.19" % "test"
       )
     }.test
   }
