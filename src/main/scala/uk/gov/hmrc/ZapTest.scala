@@ -17,8 +17,7 @@
 package uk.gov.hmrc
 
 import java.util.UUID
-import org.json4s.JsonAST.JObject
-import org.json4s.native.JsonParser
+import play.api.libs.json._
 import org.scalatest.WordSpec
 import java.io._
 import scala.Console
@@ -36,6 +35,8 @@ trait ZapTest extends WordSpec {
   var context: Context = _
   val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
   val routeToBeIgnoredFromContext: String = ""
+  implicit val zapAlertReads = Json.reads[ZapAlert]
+  implicit val zapAlertsReads = Json.reads[ZapAlerts]
 
   def appendSlashToBaseUrlIfNeeded(): String = {
     if (!zapBaseUrl.endsWith("/")) zapBaseUrl + "/" else zapBaseUrl
@@ -50,9 +51,9 @@ trait ZapTest extends WordSpec {
   }
 
   def hasCallCompleted(url: String): Boolean = {
-    val theJson = JsonParser.parse(callZapApiTo(url)._2).asInstanceOf[JObject]
-    val theStatus = theJson.values("status").toString
-    if (theStatus == "100") true else false
+    val jsonResponse = Json.parse(callZapApiTo(url)._2)
+    val status = (jsonResponse \ "status").as[String]
+    if (status == "100") true else false
   }
 
   def createPolicy(): String = {
@@ -73,8 +74,9 @@ trait ZapTest extends WordSpec {
   def createContext(): Context = {
     val contextName = UUID.randomUUID.toString
     val createContext = s"json/context/action/newContext/?contextName=$contextName"
-    val createContextResponse = JsonParser.parse(callZapApiTo(createContext)._2).asInstanceOf[JObject]
-    val contextId = createContextResponse.values("contextId").toString
+    val jsonResponse = Json.parse(callZapApiTo(createContext)._2)
+    val contextId = (jsonResponse \ "contextId").as[String]
+
     Context(contextName, contextId)
   }
 
@@ -157,14 +159,36 @@ trait ZapTest extends WordSpec {
 
   }
 
+  def reads(json: JsValue): ZapAlert = ZapAlert(
+    (json \ "other").as[String],
+    (json \ "evidence").as[String],
+    (json \ "pluginId").as[String],
+    (json \ "cweid").as[String],
+    (json \ "confidence").as[String],
+    (json \ "wascid").as[String],
+    (json \ "description").as[String],
+    (json \ "messageId").as[String],
+    (json \ "url").as[String],
+    (json \ "reference").as[String],
+    (json \ "solution").as[String],
+    (json \ "alert").as[String],
+    (json \ "param").as[String],
+    (json \ "attack").as[String],
+    (json \ "name").as[String],
+    (json \ "risk").as[String],
+    (json \ "id").as[String]
+  )
+
   def filterAlerts(): List[ZapAlert] = {
-    val baseUrl = appendSlashToBaseUrlIfNeeded()
-    val alerts = theClient.get[ZapAlerts](baseUrl + s"json/core/view/alerts/?baseurl=$alertsBaseUrl")
-    val allAlerts: List[ZapAlert] = alerts.alerts
+    val getAlerts = s"json/core/view/alerts/?baseurl=$alertsBaseUrl"
+    val jsonResponse = Json.parse(callZapApiTo(getAlerts)._2)
+    val allAlerts = (jsonResponse \ "alerts").as[List[ZapAlert]]
+
     val relevantAlerts = allAlerts.filterNot{zapAlert =>
       val filter = zapAlert.getFilter
       alertsToIgnore.contains(filter)
     }
+
     relevantAlerts
   }
 

@@ -27,7 +27,6 @@ object HmrcBuild extends Build {
   val hmrcRepoHost = java.lang.System.getProperty("hmrc.repo.host", "https://nexus-preview.tax.service.gov.uk")
 
 
-
   lazy val microservice = Project(appName, file("."))
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
     .settings(
@@ -44,16 +43,12 @@ object HmrcBuild extends Build {
 
 private object AppDependencies {
 
-  val json4sVersion = "3.5.2"
   val jerseyVersion = "1.19.3"
 
-  //  import play.sbt.PlayImport._
-//  import play.core.PlayVersion
+  import play.core.PlayVersion
 
   val compile = Seq(
-    "org.json4s" %% "json4s-jackson" % json4sVersion,
-    "org.json4s" %% "json4s-native" % json4sVersion,
-    "org.json4s" %% "json4s-ext" % json4sVersion,
+    "com.typesafe.play" %% "play" % PlayVersion.current,
     "org.scalatest" %% "scalatest" % "3.0.3",
     "com.sun.jersey" % "jersey-client" % jerseyVersion,
     "com.sun.jersey" % "jersey-core" % jerseyVersion,
@@ -68,7 +63,9 @@ private object AppDependencies {
   object Test {
     def apply() = new TestDependencies {
       override lazy val test = Seq(
-        "org.mockito" % "mockito-core" % "2.8.9" % "test"
+        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "com.typesafe.play" %% "play-specs2" % PlayVersion.current % scope,
+        "org.mockito" % "mockito-all" % "1.10.19" % "test"
       )
     }.test
   }
