@@ -17,7 +17,7 @@
 package uk.gov.hmrc.utils
 
 import com.sun.jersey.api.client.{Client, ClientResponse}
-import org.json4s.jackson.Serialization._
+//import org.json4s.jackson.Serialization._
 import javax.ws.rs.core.MediaType
 import javax.net.ssl.{HostnameVerifier, SSLContext, SSLSession, X509TrustManager}
 
@@ -29,7 +29,7 @@ import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter
 
 class InsecureClient {
 
-  implicit val defaultFormats = json.JsonExtraction.formats
+  //implicit val defaultFormats = json.JsonExtraction.formats
 
   private val jsonContentType = MediaType.APPLICATION_JSON + ";charset=utf-8"
 
@@ -49,15 +49,17 @@ class InsecureClient {
   private val client = Client.create(config)
   client.addFilter(new GZIPContentEncodingFilter(false))
 
-  def get[A](url: String)(implicit m: Manifest[A]): A = {
-    val response = client.resource(url).accept(jsonContentType).get[ClientResponse](classOf[ClientResponse])
-    val responseBody = response.getEntity(classOf[String])
-    println(s"TARGET = $url")
-    response.getStatus match {
-      case 200 => read[A](responseBody)
-      case _ => throw new RuntimeException(s"Unexpected response from $url, status code ${response.getStatus} : $responseBody")
-    }
-  }
+  //def get[A](url: String)(implicit m: Manifest[A]): A = {
+    //val response = client.resource(url).accept(jsonContentType).get[ClientResponse](classOf[ClientResponse])
+    //val responseBody = response.getEntity(classOf[String])
+    //response.getStatus match {
+    //  case 200 => read[A](responseBody)
+    //  case _ => throw new RuntimeException(s"Unexpected response from $url, status code ${response.getStatus} : $responseBody")
+    //}
+    //[A](responseBody)
+  //}
+
+  //def getResponse()
 
   def getRawResponse(url: String, contentType: String = jsonContentType)(implicit m: Manifest[String]): (Int, String) = {
     val response = client.resource(url).accept(contentType).get[ClientResponse](classOf[ClientResponse])
