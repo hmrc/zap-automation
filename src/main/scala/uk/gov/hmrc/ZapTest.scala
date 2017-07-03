@@ -35,7 +35,8 @@ trait ZapTest extends WordSpec {
   var context: Context = _
   val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
   val routeToBeIgnoredFromContext: String = ""
-  implicit val userJsonReads = Json.reads[ZapAlert]
+  implicit val zapAlertReads = Json.reads[ZapAlert]
+  implicit val zapAlertsReads = Json.reads[ZapAlerts]
 
   def appendSlashToBaseUrlIfNeeded(): String = {
     if (!zapBaseUrl.endsWith("/")) zapBaseUrl + "/" else zapBaseUrl
@@ -181,14 +182,13 @@ trait ZapTest extends WordSpec {
   def filterAlerts(): List[ZapAlert] = {
     val getAlerts = s"json/core/view/alerts/?baseurl=$alertsBaseUrl"
     val jsonResponse = Json.parse(callZapApiTo(getAlerts)._2)
-    //val allAlerts = (jsonResponse \ "alerts").as[ZapAlerts].alerts
-
-    //val allAlerts: ZapAlerts = reads(jsonResponse)
+    val allAlerts = (jsonResponse \ "alerts").as[ZapAlerts].alerts
 
     val relevantAlerts = allAlerts.filterNot{zapAlert =>
       val filter = zapAlert.getFilter
       alertsToIgnore.contains(filter)
     }
+
     relevantAlerts
   }
 
