@@ -128,11 +128,12 @@ trait ZapTest extends WordSpec {
     val file = new File("ZapReport.html")
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write("<html>\n")
-    bw.write("<head><style>table {\n      font-family: arial, sans-serif;\n    border-collapse: collapse;\n    width: 100%;\n    }td, th {\n    border: 1px solid #dddddd;\n    text-align: left;\n    padding: 8px;\n    }\n\n    tr:nth-child(even) {\n    background-color: #dddddd;\n    }\n</style>")
+    bw.write("<head><style>table {\n      font-family: arial, sans-serif;\n    border-collapse: collapse;\n    width: 100%;\n    }td, th {\n    border: 1px solid #dddddd;\n    text-align: left;\n    padding: 8px;\n    }\n\n </style>")
     bw.write("<title>HMRC Digital: Custom ZAP Report</title>\n")
     bw.write("<h1>HMRC ZAP Report</h1>\n")
     bw.write("</head>\n")
-    bw.write("<body>\n <table>\n<tr> <th> URL </th> <th> Description </th> <th> Risk Level </th> <th> Evidence </th></tr>")
+    bw.write("<body>\n <table>\n<tr> <th> Alert Attribute </th> <th> Details </th></tr>")
+
     bw.write(text)
     bw.write("</table>\n</body>\n")
     bw.write("</html>\n")
@@ -144,7 +145,13 @@ trait ZapTest extends WordSpec {
     var text: String = ""
 
     relevantAlerts.foreach { alert: ZapAlert =>
-      text = text + "<tr> <td>" + alert.url + "</td><td>" + alert.description + "</td><td>" + alert.risk + "</td><td> " + xml.Utility.escape(alert.evidence) + "</td></tr>\n"
+      var alertColour = "White"
+      if (alert.risk == "Low") {alertColour = "yellow"}
+      else if (alert.risk == "Medium") {alertColour = "orange"}
+      else if (alert.risk == "High") {alertColour = "red"}
+
+      text = text + "<tr bgcolor=\""+alertColour+"\"><td colspan=2><b>" + alert.risk + "</b></td></tr><tr> <td>URL </td><td>" + alert.url + "</td></tr> <tr> <td> Description </td><td>" + alert.description + "</td> </tr><tr><td> Evidence </td><td>" + xml.Utility.escape(alert.evidence) + "</td></tr>"
+
       println("***********************************")
       println(s"URL:         ${alert.url}")
       println(s"CWE ID:      ${alert.cweid}")

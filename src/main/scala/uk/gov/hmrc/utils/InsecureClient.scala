@@ -18,18 +18,15 @@ package uk.gov.hmrc.utils
 
 import com.sun.jersey.api.client.{Client, ClientResponse}
 import javax.ws.rs.core.MediaType
-import javax.net.ssl.{HostnameVerifier, SSLContext, SSLSession, X509TrustManager}
+import javax.net.ssl.{HostnameVerifier, SSLContext, SSLSession}
 import com.sun.jersey.api.client.config.DefaultClientConfig
 import com.sun.jersey.client.urlconnection.HTTPSProperties
-
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter
 
 class InsecureClient {
 
   private val jsonContentType = MediaType.APPLICATION_JSON + ";charset=utf-8"
-
   private val sslContext = SSLContext.getInstance("SSL")
-
   private val config = new DefaultClientConfig()
 
   config.getProperties.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(
@@ -38,7 +35,6 @@ class InsecureClient {
     },
     sslContext
   ))
-
 
   private val client = Client.create(config)
   client.addFilter(new GZIPContentEncodingFilter(false))
@@ -49,4 +45,5 @@ class InsecureClient {
     val status = response.getStatus
     (status, responseBody)
   }
+
 }
