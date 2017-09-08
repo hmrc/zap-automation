@@ -62,7 +62,15 @@ trait ZapTest extends WordSpec {
     * service you are interested in.
     */
   val alertsBaseUrl: String = ""
-  val knownCrossDomainParameter = "" //prob needs a better name and a decription if this is a workable solution
+  val trustedJavaScriptSource = "" //prob needs to be made into a List (by default empty) and a
+  // decription here and in the README if this is a workable solution. The problem with it at the
+  // moment is that when the passive scan is run before we run the ZAP tests themselves, alerts
+  // are being made. It's only upon running the ZAP tests (and creating the context) that we start
+  // to put this type of alert into the OK pile. It leaves the original passively found alerts
+  // and so at the end when we do a get on the alerts find alerts we wish we didn't. One solution is
+  // to make a call to delete all the alerts (already a call for this in our teardown) before
+  // running the ZAP tests. This definitly works. But will we accidently remove other things found
+  // in the passive scan that the ascan would not pick up?
   var policyName: String = ""
   var context: Context = _
 
@@ -147,7 +155,7 @@ trait ZapTest extends WordSpec {
     }
 
     if(knownCrossDomainParameter!=("")) {
-      val addFilter = s"json/alertFilter/action/addAlertFilter/?contextId=$contextId&ruleId=10017&newLevel=-1&url=$contextBaseUrl&urlIsRegex=true&parameter=$knownCrossDomainParameter&enabled=true"
+      val addFilter = s"json/alertFilter/action/addAlertFilter/?contextId=$contextId&ruleId=10017&newLevel=-1&url=$contextBaseUrl&urlIsRegex=true&parameter=$trustedJavaScriptSource&enabled=true"
       callZapApiTo(addFilter)
 
     }
