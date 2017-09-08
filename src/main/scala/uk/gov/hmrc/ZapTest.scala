@@ -62,6 +62,7 @@ trait ZapTest extends WordSpec {
     * service you are interested in.
     */
   val alertsBaseUrl: String = ""
+  val knownCrossDomainParameter = "" //prob needs a better name and a decription if this is a workable solution
   var policyName: String = ""
   var context: Context = _
 
@@ -82,6 +83,7 @@ trait ZapTest extends WordSpec {
     * could force Zap not to test them by adding them in here as a regex.
     */
   val routeToBeIgnoredFromContext: String = ""
+  var contextId = ""
   implicit val zapAlertReads = Json.reads[ZapAlert]
   implicit val zapAlertsReads = Json.reads[ZapAlerts]
 
@@ -122,7 +124,7 @@ trait ZapTest extends WordSpec {
     val contextName = UUID.randomUUID.toString
     val createContext = s"json/context/action/newContext/?contextName=$contextName"
     val jsonResponse = Json.parse(callZapApiTo(createContext)._2)
-    val contextId = (jsonResponse \ "contextId").as[String]
+    contextId = (jsonResponse \ "contextId").as[String]
 
     Context(contextName, contextId)
   }
@@ -144,6 +146,11 @@ trait ZapTest extends WordSpec {
       callZapApiTo(excludeRouteFromContext)
     }
 
+    if(knownCrossDomainParameter!=("")) {
+      val addFilter = s"json/alertFilter/action/addAlertFilter/?contextId=$contextId&ruleId=10017&newLevel=-1&url=$contextBaseUrl&urlIsRegex=true&parameter=$knownCrossDomainParameter&enabled=true"
+      callZapApiTo(addFilter)
+
+    }
   }
 
   def tearDown(contextName: String, policyName: String): Unit = {
