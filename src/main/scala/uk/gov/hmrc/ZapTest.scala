@@ -55,6 +55,11 @@ trait ZapTest extends WordSpec {
   val contextBaseUrl: String = ".*"
 
   /**
+    * Not a required field. This value, if set to true, will ignore all alerts from optimizely.
+    */
+  val ignoreOptimizelyAlerts: Boolean = false
+
+  /**
     * Not a required field. This is the url that the zap-automation library
     * will use to filter out the alerts that are shown to you. Note that while Zap is doing
     * testing, it is likely to find alerts from other services that you don't own - for example
@@ -197,6 +202,7 @@ trait ZapTest extends WordSpec {
       else if (alert.risk == "Medium") {alertColour = "orange"}
       else if (alert.risk == "High") {alertColour = "red"}
 
+
       text = text + "<tr bgcolor=\""+alertColour+"\"><td colspan=2><b>" + alert.risk + "</b></td></tr><tr> <td>URL </td><td>" + alert.url + "</td></tr> <tr> <td> Description </td><td>" + alert.description + "</td> </tr><tr><td> Evidence </td><td>" + xml.Utility.escape(alert.evidence) + "</td></tr>"
 
       println("***********************************")
@@ -233,17 +239,26 @@ trait ZapTest extends WordSpec {
     (json \ "id").as[String]
   )
 
-  def filterAlerts(): List[ZapAlert] = {
-    val getAlerts = s"json/core/view/alerts/?baseurl=$alertsBaseUrl"
-    val jsonResponse = Json.parse(callZapApiTo(getAlerts)._2)
-    val allAlerts = (jsonResponse \ "alerts").as[List[ZapAlert]]
+  def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
 
     val relevantAlerts = allAlerts.filterNot{zapAlert =>
       val filter = zapAlert.getFilter
       alertsToIgnore.contains(filter)
     }
 
-    relevantAlerts
+    if(ignoreOptimizelyAlerts)
+      relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
+    else
+      relevantAlerts
+
+  }
+
+
+  def parseAlerts: List[ZapAlert] = {
+    val getAlerts = s"json/core/view/alerts/?baseurl=$alertsBaseUrl"
+    val jsonResponse = Json.parse(callZapApiTo(getAlerts)._2)
+    val allAlerts = (jsonResponse \ "alerts").as[List[ZapAlert]]
+    allAlerts
   }
 
   "Setting up the policy and context" should {
@@ -264,7 +279,9 @@ trait ZapTest extends WordSpec {
 
   "Inspecting the alerts" should {
     "not find any unknown alerts" in {
-      val relevantAlerts = filterAlerts()
+
+      val relevantAlerts = filterAlerts(parseAlerts)
+
       if (relevantAlerts.nonEmpty) {
         reportAlerts(relevantAlerts)
         fail(s"Zap found some new alerts - see above!")

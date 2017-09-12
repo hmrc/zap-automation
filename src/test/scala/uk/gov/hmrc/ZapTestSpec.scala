@@ -30,16 +30,16 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
   val insecureClientMock: InsecureClient = mock[InsecureClient]
   private val jsonStatus = """{"status": "100"}"""
 
-  val zapTest = new ZapTest {
+  class StubbedZapTest extends ZapTest {
     override lazy val theClient: InsecureClient = insecureClientMock
     override val zapBaseUrl: String = "http://zap.url.com"
     override val testUrl: String = "something"
     override val contextBaseUrl: String = "http://context.base.url.*"
     override val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
     override val alertsBaseUrl: String = "http://alerts.base.url"
-    val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "http://beccy.com/")
-    override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored1)
   }
+
+  val zapTest = new StubbedZapTest
 
   describe("callZapApiTo") {
 
@@ -152,57 +152,113 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
   }
 
   describe("filterAlerts") {
+    it("should filter out optimizely alerts when they are present and the ignoreOptimizely flag is true") {
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+
+      val zapTest = new StubbedZapTest {
+        override val ignoreOptimizelyAlerts: Boolean = true
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2, alert3))
+      filteredAlerts.size shouldBe 2
+
+    }
+
+    it("should not filter out optimizely alerts when they are present and the ignoreOptimizely flag is false") {
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+
+      val zapTest = new StubbedZapTest {
+        override val ignoreOptimizelyAlerts: Boolean = false
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2, alert3))
+      filteredAlerts.size shouldBe 3
+
+    }
+
+    it("should not filter out optimizely alerts when they are not present and the ignoreOptimizely flag is true") {
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+
+      val zapTest = new StubbedZapTest {
+        override val ignoreOptimizelyAlerts: Boolean = true
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2, alert3))
+      filteredAlerts.size shouldBe 3
+
+    }
 
     it("should filter out ignored alerts") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://beccy.com/",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert("", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "http://beccy.com/")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored1)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2, alert3))
+      filteredAlerts.size shouldBe 2
+    }
+
+  }
+
+
+  describe("parseAlerts") {
+
+   it("should parse alerts from the Zap API") {
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, """{
                                                                                       "alerts": [
                                                                                       {
-                                                                                      "sourceid": "3",
-                                                                                      "other": "This issue still applies to error type pages (401, 403, 500, etc) as those pages are often still affected by injection issues, in which case there is still concern for browsers sniffing pages away from their actual content type.\nAt \"High\" threshold this scanner will not alert on client or server error responses.",
-                                                                                      "method": "POST",
+                                                                                      "sourceid": "",
+                                                                                      "other": "Other text",
+                                                                                      "method": "",
                                                                                       "evidence": "",
-                                                                                      "pluginId": "10021",
-                                                                                      "cweid": "16",
-                                                                                      "confidence": "Medium",
-                                                                                      "wascid": "15",
-                                                                                      "description": "The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing.",
-                                                                                      "messageId": "22447",
-                                                                                      "url": "https://shavar.services.mozilla.com/downloads?client=navclient-auto-ffox&appver=46.0.1&pver=2.2",
-                                                                                      "reference": "http://msdn.microsoft.com/en-us/library/ie/gg622941%28v=vs.85%29.aspx\nhttps://www.owasp.org/index.php/List_of_useful_HTTP_headers",
-                                                                                      "solution": "Ensure that the application/web server sets the Content-Type header appropriately, and that it sets the X-Content-Type-Options header to 'nosniff' for all web pages.\nIf possible, ensure that the end user uses a standards-compliant and modern web browser that does not perform MIME-sniffing at all, or that can be directed by the web application/web server to not perform MIME-sniffing.",
-                                                                                      "alert": "X-Content-Type-Options Header Missing",
-                                                                                      "param": "X-Content-Type-Options",
+                                                                                      "pluginId": "",
+                                                                                      "cweid": "",
+                                                                                      "confidence": "",
+                                                                                      "wascid": "",
+                                                                                      "description": "",
+                                                                                      "messageId": "",
+                                                                                      "url": "",
+                                                                                      "reference": "",
+                                                                                      "solution": "",
+                                                                                      "alert": "",
+                                                                                      "param": "",
                                                                                       "attack": "",
-                                                                                      "name": "X-Content-Type-Options Header Missing",
-                                                                                      "risk": "Low",
-                                                                                      "id": "5510"
-                                                                                      },
-                                                                                      {
-                                                                                       "sourceid": "3",
-                                                                                       "other": "This issue still applies to error type pages (401, 403, 500, etc) as those pages are often still affected by injection issues, in which case there is still concern for browsers sniffing pages away from their actual content type.\nAt \"High\" threshold this scanner will not alert on client or server error responses.",
-                                                                                       "method": "POST",
-                                                                                       "evidence": "",
-                                                                                       "pluginId": "10021",
-                                                                                       "cweid": "16",
-                                                                                       "confidence": "Medium",
-                                                                                       "wascid": "15",
-                                                                                      "description": "The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'. This allows older versions of Internet Explorer and Chrome to perform MIME-sniffing on the response body, potentially causing the response body to be interpreted and displayed as a content type other than the declared content type. Current (early 2014) and legacy versions of Firefox will use the declared content type (if one is set), rather than performing MIME-sniffing.",
-                                                                                       "messageId": "22447",
-                                                                                       "url": "http://beccy.com/",
-                                                                                       "reference": "http://msdn.microsoft.com/en-us/library/ie/gg622941%28v=vs.85%29.aspx\nhttps://www.owasp.org/index.php/List_of_useful_HTTP_headers",
-                                                                                       "solution": "Ensure that the application/web server sets the Content-Type header appropriately, and that it sets the X-Content-Type-Options header to 'nosniff' for all web pages.\nIf possible, ensure that the end user uses a standards-compliant and modern web browser that does not perform MIME-sniffing at all, or that can be directed by the web application/web server to not perform MIME-sniffing.",
-                                                                                       "alert": "X-Content-Type-Options Header Missing",
-                                                                                       "param": "X-Content-Type-Options",
-                                                                                       "attack": "",
-                                                                                       "name": "X-Content-Type-Options Header Missing",
-                                                                                       "risk": "Low",
-                                                                                       "id": "5510"
+                                                                                      "name": "",
+                                                                                      "risk": "",
+                                                                                      "id": ""
                                                                                       }
                                                                                       ]
                                                                                       }"""))
 
-      val filteredAlerts = zapTest.filterAlerts()
-      filteredAlerts.size shouldBe 1
+      val parsedAlerts = zapTest.parseAlerts
+     val alert1: ZapAlert = new ZapAlert("Other text", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
+     parsedAlerts should contain theSameElementsAs(List(alert1))
 
     }
   }
