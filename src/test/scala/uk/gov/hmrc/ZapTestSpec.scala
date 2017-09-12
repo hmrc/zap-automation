@@ -151,6 +151,26 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
     }
   }
 
+  describe("filterOutOptimizelyAlerts") {
+    it("should filter out optimizely alerts when they are present") {
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+
+      val alerts: List[ZapAlert] = List(alert1, alert2, alert3)
+      val filteredAlerts = zapTest.filterOutOptimizelyAlerts(alerts)
+      filteredAlerts.size shouldBe 2
+    }
+
+    it("should not filter out any alerts when there are not any optimizely alerts present") {
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.oewrwerwrewrw.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alerts: List[ZapAlert] = List(alert1, alert2)
+      val filteredAlerts = zapTest.filterOutOptimizelyAlerts(alerts)
+      filteredAlerts.size shouldBe 2
+    }
+  }
+
   describe("filterAlerts") {
 
     it("should filter out ignored alerts") {
