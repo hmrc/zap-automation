@@ -277,9 +277,9 @@ trait ZapTest extends WordSpec {
 
   "Inspecting the alerts" should {
     "not find any unknown alerts" in {
-      val relevantAlerts = filterAlerts()
+      var relevantAlerts = filterAlerts()
       if (ignoreOptimizelyAlerts) {
-        filterOutOptimizelyAlerts(relevantAlerts)
+        relevantAlerts = filterOutOptimizelyAlerts(relevantAlerts)
       }
       if (relevantAlerts.nonEmpty) {
         reportAlerts(relevantAlerts)
