@@ -239,24 +239,26 @@ trait ZapTest extends WordSpec {
     (json \ "id").as[String]
   )
 
-  def filterAlerts(): List[ZapAlert] = {
-    val getAlerts = s"json/core/view/alerts/?baseurl=$alertsBaseUrl"
-    val jsonResponse = Json.parse(callZapApiTo(getAlerts)._2)
-    val allAlerts = (jsonResponse \ "alerts").as[List[ZapAlert]]
+  def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
 
     val relevantAlerts = allAlerts.filterNot{zapAlert =>
       val filter = zapAlert.getFilter
       alertsToIgnore.contains(filter)
     }
 
-    relevantAlerts
+    if(ignoreOptimizelyAlerts)
+      relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
+    else
+      relevantAlerts
+
   }
 
-  def filterOutOptimizelyAlerts(alerts: List[ZapAlert]): List[ZapAlert] = {
-    val filteredAlerts = alerts.filterNot{zapAlert =>
-      zapAlert.evidence.contains("optimizely")
-    }
-    filteredAlerts
+
+  def parseAlerts: List[ZapAlert] = {
+    val getAlerts = s"json/core/view/alerts/?baseurl=$alertsBaseUrl"
+    val jsonResponse = Json.parse(callZapApiTo(getAlerts)._2)
+    val allAlerts = (jsonResponse \ "alerts").as[List[ZapAlert]]
+    allAlerts
   }
 
   "Setting up the policy and context" should {
@@ -277,10 +279,9 @@ trait ZapTest extends WordSpec {
 
   "Inspecting the alerts" should {
     "not find any unknown alerts" in {
-      var relevantAlerts = filterAlerts()
-      if (ignoreOptimizelyAlerts) {
-        relevantAlerts = filterOutOptimizelyAlerts(relevantAlerts)
-      }
+
+      val relevantAlerts = filterAlerts(parseAlerts)
+
       if (relevantAlerts.nonEmpty) {
         reportAlerts(relevantAlerts)
         fail(s"Zap found some new alerts - see above!")
