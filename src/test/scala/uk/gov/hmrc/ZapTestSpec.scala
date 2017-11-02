@@ -70,15 +70,15 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
   }
 
 
-  describe ("hasCallCompleted"){
+  describe("hasCallCompleted") {
 
-    it("should return true if status is 100"){
+    it("should return true if status is 100") {
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, jsonStatus))
       val answer = zapTest.hasCallCompleted("someUrl")
       answer shouldBe true
     }
 
-    it("should return false if status is not 100"){
+    it("should return false if status is not 100") {
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "{\n\"status\": \"99\"\n}"))
       val answer = zapTest.hasCallCompleted("someUrl")
       answer shouldBe false
@@ -153,9 +153,9 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
   describe("filterAlerts") {
     it("should filter out optimizely alerts when they are present and the ignoreOptimizely flag is true") {
-      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
 
       val zapTest = new StubbedZapTest {
         override val ignoreOptimizelyAlerts: Boolean = true
@@ -167,9 +167,9 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
     }
 
     it("should not filter out optimizely alerts when they are present and the ignoreOptimizely flag is false") {
-      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
 
       val zapTest = new StubbedZapTest {
         override val ignoreOptimizelyAlerts: Boolean = false
@@ -181,9 +181,9 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
     }
 
     it("should not filter out optimizely alerts when they are not present and the ignoreOptimizely flag is true") {
-      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
 
       val zapTest = new StubbedZapTest {
         override val ignoreOptimizelyAlerts: Boolean = true
@@ -212,8 +212,8 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
         name = "",
         risk = "",
         id = "")
-      val alert2: ZapAlert = new ZapAlert("", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      val alert3: ZapAlert = new ZapAlert("", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
+      val alert2: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
 
       val zapTest = new StubbedZapTest {
         val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "http://beccy.com/")
@@ -229,8 +229,9 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
   describe("parseAlerts") {
 
-   it("should parse alerts from the Zap API") {
-      when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, """{
+    it("should parse alerts from the Zap API") {
+      when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200,
+        """{
                                                                                       "alerts": [
                                                                                       {
                                                                                       "sourceid": "",
@@ -257,10 +258,132 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
                                                                                       }"""))
 
       val parsedAlerts = zapTest.parseAlerts
-     val alert1: ZapAlert = new ZapAlert("Other text", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
-     parsedAlerts should contain theSameElementsAs(List(alert1))
+      val alert1: ZapAlert = new ZapAlert("Other text", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      parsedAlerts should contain theSameElementsAs (List(alert1))
 
     }
   }
 
+  describe("risk filtering") {
+    it("should ignore low alerts when alert flag is at medium") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://beccy.com/",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "low",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "low", "")
+      val alert3: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "low", "")
+
+      val zapTest = new StubbedZapTest {
+          override val minimumRiskLevel = Risk.MEDIUM
+      }
+
+      val filteredList = zapTest.filterAlerts(List(alert1, alert2, alert3))
+
+      filteredList.size shouldBe 0
+
+    }
+
+    it("should not ignore medium alerts when alert flag is at medium") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://beccy.com/",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "low",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "medium", "")
+      val alert3: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "low", "")
+
+      val zapTest = new StubbedZapTest {
+        override val minimumRiskLevel = Risk.MEDIUM
+      }
+
+      val filteredList = zapTest.filterAlerts(List(alert1, alert2, alert3))
+
+      filteredList.size shouldBe 1
+
+    }
+
+    it("should return all alerts when minimumRisk is not overriden") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://beccy.com/",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "low",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "medium", "")
+      val alert3: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "low", "")
+
+      val zapTest = new StubbedZapTest {}
+
+      val filteredList = zapTest.filterAlerts(List(alert1, alert2, alert3))
+
+      filteredList.size shouldBe 3
+
+    }
+
+    it("should return all alerts where risk is not specified") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://beccy.com/",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+      val alert3: ZapAlert = new ZapAlert("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+
+      val zapTest = new StubbedZapTest {}
+
+      val filteredList = zapTest.filterAlerts(List(alert1, alert2, alert3))
+
+      filteredList.size shouldBe 3
+
+    }
+
+  }
 }

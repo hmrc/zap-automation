@@ -17,13 +17,22 @@
 package uk.gov.hmrc
 
 import java.util.UUID
+
 import play.api.libs.json._
 import org.scalatest.WordSpec
 import java.io._
+
 import scala.Console
+import uk.gov.hmrc.Risk
 import uk.gov.hmrc.utils.{InsecureClient, TestHelper}
 
 trait ZapTest extends WordSpec {
+
+  /**
+    * Specify risk threshold level to keep during filtering.
+    */
+  val minimumRiskLevel: Risk.Value = Risk.LOW
+
   /**
     * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
     * you can filter them out by adding to this list, using the cweid and the url that the alert was found on.
@@ -241,10 +250,12 @@ trait ZapTest extends WordSpec {
 
   def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
 
-    val relevantAlerts = allAlerts.filterNot{zapAlert =>
+    val filteredAlerts = allAlerts.filterNot{zapAlert =>
       val filter = zapAlert.getFilter
       alertsToIgnore.contains(filter)
     }
+
+    val relevantAlerts = filteredAlerts.filterNot(zapAlert => Risk.toRisk(zapAlert.risk) < minimumRiskLevel)
 
     if(ignoreOptimizelyAlerts)
       relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
