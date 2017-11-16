@@ -63,7 +63,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
       try {
         zapTest.callZapApiTo("someInvalidUrl")
       } catch {
-        case e: TestFailedException => e.getMessage() shouldBe "The ZAP API returned a 404 status when you called it using: http://zap.url.com/someInvalidUrl"
+        case e: TestFailedException => e.getMessage() shouldBe "The ZAP API returned a 404 status when you called it using: http://zap.url.com/someInvalidUrl. \n The response body was: the-response"
       }
 
     }

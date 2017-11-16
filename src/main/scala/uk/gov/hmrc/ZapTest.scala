@@ -98,7 +98,8 @@ trait ZapTest extends WordSpec {
     val completeUrl: String = appendSlashToBaseUrlIfNeeded() + url
     val theResponse = theClient.getRawResponse(completeUrl)
     val statusCode = theResponse._1
-    if (statusCode != 200) fail(s"The ZAP API returned a $statusCode status when you called it using: $completeUrl")
+    val responseBody = theResponse._2
+    if (statusCode != 200) fail(s"The ZAP API returned a $statusCode status when you called it using: $completeUrl. \n The response body was: $responseBody")
     theResponse
   }
 
