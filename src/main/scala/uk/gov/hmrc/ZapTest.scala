@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,8 +243,7 @@ trait ZapTest extends WordSpec {
   def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
 
     val relevantAlerts = allAlerts.filterNot{zapAlert =>
-      val filter = zapAlert.getFilter
-      alertsToIgnore.contains(filter)
+      alertsToIgnore.exists(f => f.matches(zapAlert))
     }
 
     if(ignoreOptimizelyAlerts)
@@ -301,5 +300,11 @@ case class ZapAlerts(alerts: List[ZapAlert])
 case class ZapAlert(other: String = "", evidence: String = "", pluginId: String = "", cweid: String, confidence: String = "", wascid: String = "", description: String = "", messageId: String = "", url: String, reference: String = "", solution: String = "", alert: String = "", param: String = "", attack: String = "", name: String = "", risk: String = "", id: String = "") {
   def getFilter = ZapAlertFilter(cweid, url)
 }
-case class ZapAlertFilter(cweid: String, url: String)
+
+case class ZapAlertFilter(cweid: String, url: String) {
+  def matches(zapAlert: ZapAlert) = {
+    zapAlert.url.matches(url) && zapAlert.cweid.equals(cweid)
+  }
+}
+
 case class Context(name: String, id: String)
