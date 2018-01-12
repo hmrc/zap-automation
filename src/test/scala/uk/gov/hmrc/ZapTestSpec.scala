@@ -143,7 +143,6 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
 
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "the-response"))
 
-      //val policyName = zapTest.createPolicy()
       zapTest.setUpPolicy("policyName")
       verify(insecureClientMock).getRawResponse(contains("http://zap.url.com/json/ascan/action/disableAllScanners/?scanPolicyName="), any())(any())
       verify(insecureClientMock).getRawResponse(contains("http://zap.url.com/json/ascan/action/enableScanners/?ids="), any())(any())
