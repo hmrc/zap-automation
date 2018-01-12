@@ -19,13 +19,14 @@ package uk.gov.hmrc
 import org.mockito.Matchers.any
 import org.mockito.Matchers.contains
 import org.mockito.Matchers.{eq => eqTo}
+import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FunSpec, Matchers}
 import uk.gov.hmrc.utils.InsecureClient
 import org.scalatest.exceptions.TestFailedException
 
-class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
+class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
 
   val insecureClientMock: InsecureClient = mock[InsecureClient]
   private val jsonStatus = """{"status": "100"}"""
@@ -40,6 +41,10 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
   }
 
   val zapTest = new StubbedZapTest
+
+  override protected def beforeEach(): Unit = {
+    Mockito.reset(insecureClientMock)
+  }
 
   describe("callZapApiTo") {
 
@@ -72,13 +77,13 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
   describe ("hasCallCompleted"){
 
-    it("should return true if status is 100"){
+    it("should return true if status is 200"){
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, jsonStatus))
       val answer = zapTest.hasCallCompleted("someUrl")
       answer shouldBe true
     }
 
-    it("should return false if status is not 100"){
+    it("should return false if status is not 200"){
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "{\n\"status\": \"99\"\n}"))
       val answer = zapTest.hasCallCompleted("someUrl")
       answer shouldBe false
@@ -119,6 +124,34 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
     }
   }
 
+  describe("setUpPolicy") {
+    it("should call the Zap API to set up the policy with scanners meant for UI testing") {
+      val zapTest = new StubbedZapTest {
+        override val testingAnApi: Boolean = false
+      }
+
+      when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "the-response"))
+
+      //val policyName = zapTest.createPolicy()
+      zapTest.setUpPolicy("policyName")
+      verify(insecureClientMock).getRawResponse(contains("http://zap.url.com/json/ascan/action/disableScanners/?ids="), any())(any())
+
+    }
+    it("should call the Zap API to set up the policy with scanners meant for API testing") {
+      val zapTest = new StubbedZapTest {
+        override val testingAnApi: Boolean = true
+      }
+
+      when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, "the-response"))
+
+      //val policyName = zapTest.createPolicy()
+      zapTest.setUpPolicy("policyName")
+      verify(insecureClientMock).getRawResponse(contains("http://zap.url.com/json/ascan/action/disableAllScanners/?scanPolicyName="), any())(any())
+      verify(insecureClientMock).getRawResponse(contains("http://zap.url.com/json/ascan/action/enableScanners/?ids="), any())(any())
+
+    }
+  }
+
   describe("runAndCheckStatusOfSpider") {
 
     it("should call Zap API to run the spider scan") {
@@ -134,7 +167,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
     it("should call Zap API to run the active scan") {
       when(insecureClientMock.getRawResponse(any(), any())(any())).thenReturn((200, jsonStatus))
       zapTest.runAndCheckStatusOfActiveScan("", "")
-      verify(insecureClientMock).getRawResponse(eqTo("http://zap.url.com/json/spider/view/status"), any())(any())
+      verify(insecureClientMock).getRawResponse(eqTo("http://zap.url.com/json/ascan/view/status"), any())(any())
 
     }
   }
