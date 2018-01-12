@@ -88,6 +88,10 @@ trait ZapTest extends WordSpec {
     */
   val routeToBeIgnoredFromContext: String = ""
 
+  /**
+    * Not a required field. You should set this to be true if you are testing an API.
+    * By default this assumes you are testing a UI and therefore is defaulted to be false.
+    */
   val testingAnApi: Boolean = false
 
   implicit val zapAlertReads = Json.reads[ZapAlert]
