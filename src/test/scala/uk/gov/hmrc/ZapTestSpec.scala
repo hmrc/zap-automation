@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,7 +194,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
 
     }
 
-    it("should filter out ignored alerts") {
+    it("should filter out alerts that match cweid and url of the ignored alerts list where the url is exact") {
       val alert1: ZapAlert = new ZapAlert(other = "",
         evidence = "",
         pluginId = "",
@@ -216,13 +216,259 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar {
       val alert3: ZapAlert = new ZapAlert("", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
 
       val zapTest = new StubbedZapTest {
-        val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "http://beccy.com/")
-        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored1)
+        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "http://beccy.com/")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
       }
 
       val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2, alert3))
       filteredAlerts.size shouldBe 2
     }
+
+    it("should filter out alerts that match cweid and url of the ignored alerts list where the url is a regex") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/888/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert("", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = """http://localhost:9999/hello/\w{3}/here""")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2))
+      filteredAlerts.size shouldBe 1
+    }
+
+    it("should filter out multiple alerts that match both url and cweid of the ignored alerts list") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/SB363126A/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "17",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/YZ570921C4/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert3: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "18",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid= "16", url = """http://localhost:9999/hello/\w{9}/here""")
+        val alertToBeIgnored2: ZapAlertFilter = ZapAlertFilter(cweid= "17", url = """http://localhost:9999/hello/\w{10}/here""")
+        val alertToBeIgnored3: ZapAlertFilter = ZapAlertFilter(cweid= "18", url = "http://localhost:9999/hello/here")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored1, alertToBeIgnored2, alertToBeIgnored3)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2, alert3))
+      filteredAlerts.size shouldBe 0
+    }
+
+    it("should not filter out alerts that match url but not cweid of the ignored alerts list where the url is a regex") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/SB363126A/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "17",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/YZ570921C/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid= "16", url = """http://localhost:9999/hello/\w{9}/here""")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2))
+      filteredAlerts.size shouldBe 1
+    }
+
+    it("should not filter out alerts that match cweid but not url of the ignored alerts list where the url is a regex") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/SB363126A/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/YZ570921C/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert3: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/YZ570921/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid= "16", url = """http://localhost:9999/hello/\w{9}/here""")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2, alert3))
+      filteredAlerts.size shouldBe 1
+    }
+
+    it("should not filter out alerts that match cweid but not url of the ignored alerts list where the url is exact") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/SB363126A/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+      val alert2: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:9999/hello/YZ570921/here",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid= "16", url = "http://localhost:9999/hello/SB363126A/here")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1, alert2))
+      filteredAlerts.size shouldBe 1
+    }
+
 
   }
 

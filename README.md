@@ -88,9 +88,7 @@ class ZapRunner extends ZapTest{
     * you can filter them out using this code, on the cweid and the url that the alert was found on.
     * The CWE ID is a Common Weakness Enumeration (http://cwe.mitre.org/data/index.html), you can
     * find this by looking at the alert output from your tests.
-    * As part of the trial, please try
-    * filtering out a few alerts and seeing if this functionality works for you.
-    * Below you can see an example of how this might work.
+    * url can be either a static url or a regex (if for example you have an randomly generated id within your url)
     */
   val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "xxx")
   override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored1)
