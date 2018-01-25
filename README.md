@@ -87,11 +87,24 @@ class ZapRunner extends ZapTest{
     * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
     * you can filter them out using this code, on the cweid and the url that the alert was found on.
     * The CWE ID is a Common Weakness Enumeration (http://cwe.mitre.org/data/index.html), you can
-    * find this by looking at the alert output from your tests.
-    * url can be either a static url or a regex (if for example you have an randomly generated id within your url)
-    */
+    * find this by looking at the alert output from your tests. url can either be a normal string or a regex
+    * (for example you may wish to use a regex where a url includes an ID that differs with each test run)
+    * 
+    * As dots '.' and question marks '?' are used to build both regular expressions and URLs you need to be careful
+    * when instiating the filter that includes them (make sure that you escape them if they are not intended to be a
+    * regex quantifier).  
+    * For example:
+    *   www\.google\.com/search\?q=blah will match www.google.com/search?q=blah
+    */  
   val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "xxx")
   override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored1)
+  
+  /**
+    * Not a required field. You should set this to be true if you are testing an API.
+    * By default this assumes you are testing a UI and therefore is defaulted to be false.
+    */
+  //override val testingAnApi: Boolean = false
+
 
 }
 ```
