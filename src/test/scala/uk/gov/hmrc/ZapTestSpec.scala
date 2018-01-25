@@ -455,6 +455,116 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
       filteredAlerts.size shouldBe 1
     }
 
+    it("should filter urls that include question marks (url parameters)") {
+     val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:99991/hello/SB363126A/optional/something-else?param1=1234",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val alert2: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:99991/hello/SB363126A/optional/something-else?param1=1234",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val alert3: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://localhost:99991/hello/SB363126A/something-else?param1=1234",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid= "16", url = """http://localhost:99991/hello/SB363126A(/optional)?/something-else\?param1=1234""")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1,alert2,alert3))
+      filteredAlerts.size shouldBe 0
+    }
+
+    it("should filter urls that include dots (domain separators)") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "https://www.gstatic.com/chrome/intelligence/",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val alert2: ZapAlert = new ZapAlert(other = "",
+        evidence = "",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "https://www.gstatic.com/chrome/intelligence/anything-at-all",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "",
+        id = "")
+
+      val zapTest = new StubbedZapTest {
+        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid= "16", url = """https://www\.gstatic\.com/chrome/intelligence/.*""")
+        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
+      }
+
+      val filteredAlerts = zapTest.filterAlerts(List(alert1,alert2))
+      filteredAlerts.size shouldBe 0
+    }
+
     it("should not filter out alerts that match cweid but not url of the ignored alerts list where the url is exact") {
       val alert1: ZapAlert = new ZapAlert(other = "",
         evidence = "",
