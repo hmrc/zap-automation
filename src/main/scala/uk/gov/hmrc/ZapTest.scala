@@ -212,9 +212,9 @@ trait ZapTest extends WordSpec {
     file
   }
 
-  def reportAlerts(relevantAlerts: List[ZapAlert]): Unit = {
-    var text: String = ""
+  var reportText: String = ""
 
+  def reportAlerts(relevantAlerts: List[ZapAlert]): Unit = {
     relevantAlerts.foreach { alert: ZapAlert =>
       var alertColour = "White"
       if (alert.risk == "Low") {alertColour = "yellow"}
@@ -222,7 +222,7 @@ trait ZapTest extends WordSpec {
       else if (alert.risk == "High") {alertColour = "red"}
 
 
-      text = text + "<tr bgcolor=\""+alertColour+"\"><td colspan=2><b>" + alert.risk + "</b></td></tr><tr> <td>URL </td><td>" + alert.url + "</td></tr> <tr> <td> Description </td><td>" + alert.description + "</td> </tr><tr><td> Evidence </td><td>" + xml.Utility.escape(alert.evidence) + "</td></tr>"
+      reportText = reportText + "<tr bgcolor=\""+alertColour+"\"><td colspan=2><b>" + alert.risk + "</b></td></tr><tr> <td>URL </td><td>" + alert.url + "</td></tr> <tr> <td> Description </td><td>" + alert.description + "</td> </tr><tr><td> Evidence </td><td>" + xml.Utility.escape(alert.evidence) + "</td></tr><tr><td> CWE ID </td><td>" + xml.Utility.escape(alert.cweid) + "</td></tr>"
 
       println("***********************************")
       println(s"URL:         ${alert.url}")
@@ -233,7 +233,7 @@ trait ZapTest extends WordSpec {
       println(s"Evidence:    ${alert.evidence.take(100).trim}...")
     }
 
-    val filePath = writeHtmlReportToFile(text).getCanonicalPath
+    val filePath = writeHtmlReportToFile(reportText).getCanonicalPath
     println(Console.BOLD + s"For more information on alerts, please see the html report at $filePath")
 
   }
