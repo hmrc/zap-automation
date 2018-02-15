@@ -182,6 +182,69 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
     }
   }
 
+  describe("report"){
+    it("should create html for a report if there are alerts") {
+      val alert1: ZapAlert = new ZapAlert(other = "",
+        evidence = "Some evidence",
+        pluginId = "",
+        cweid = "16",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://dawn.com/",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "High",
+        id = "")
+
+      val alert2: ZapAlert = new ZapAlert(other = "",
+        evidence = "Some other evidence",
+        pluginId = "",
+        cweid = "200",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://dawn.com/hello",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "Medium",
+        id = "")
+
+      val alert3: ZapAlert = new ZapAlert(other = "",
+        evidence = "Some more evidence",
+        pluginId = "",
+        cweid = "3",
+        confidence = "",
+        wascid = "",
+        description = "",
+        messageId = "",
+        url = "http://dawn.com/hello",
+        reference = "",
+        solution = "",
+        alert = "",
+        param = "",
+        attack = "",
+        name = "",
+        risk = "Low",
+        id = "")
+
+      val expectedReportText = """<tr bgcolor="red"><td colspan=2><b>High</b></td></tr><tr> <td>URL </td><td>http://dawn.com/</td></tr> <tr> <td> Description </td><td></td> </tr><tr><td> Evidence </td><td>Some evidence</td></tr><tr><td> CWE ID </td><td>16</td></tr><tr bgcolor="orange"><td colspan=2><b>Medium</b></td></tr><tr> <td>URL </td><td>http://dawn.com/hello</td></tr> <tr> <td> Description </td><td></td> </tr><tr><td> Evidence </td><td>Some other evidence</td></tr><tr><td> CWE ID </td><td>200</td></tr><tr bgcolor="yellow"><td colspan=2><b>Low</b></td></tr><tr> <td>URL </td><td>http://dawn.com/hello</td></tr> <tr> <td> Description </td><td></td> </tr><tr><td> Evidence </td><td>Some more evidence</td></tr><tr><td> CWE ID </td><td>3</td></tr>"""
+      val parsedAlerts: List[ZapAlert] = List(alert1,alert2,alert3)
+      val report = zapTest.reportAlerts(parsedAlerts)
+      zapTest.reportText shouldBe expectedReportText
+    }
+  }
+
   describe("filterAlerts") {
     it("should filter out optimizely alerts when they are present and the ignoreOptimizely flag is true") {
       val alert1: ZapAlert = new ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", "", "","", "", "","", "", "","", "", "","", "", "", "")
