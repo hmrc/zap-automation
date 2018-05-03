@@ -49,6 +49,8 @@ private object AppDependencies {
 
   val compile = Seq(
     "com.typesafe.play" %% "play" % PlayVersion.current,
+    "com.typesafe.play" %% "play-ws" % PlayVersion.current,
+    "org.slf4j" % "slf4j-api" % "1.7.25",
     "org.scalatest" %% "scalatest" % "3.0.3",
     "com.sun.jersey" % "jersey-client" % jerseyVersion,
     "com.sun.jersey" % "jersey-core" % jerseyVersion,
@@ -69,7 +71,6 @@ private object AppDependencies {
       )
     }.test
   }
-
 
 
   def apply() = compile ++ Test()

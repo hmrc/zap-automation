@@ -99,6 +99,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
     }
   }
 
+  //TODO this should assert something or be deleted
   describe("setUpContext") {
 
     it("should call the Zap API to set up the context") {
@@ -312,7 +313,8 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
     it("should filter out alerts that match cweid and url of the ignored alerts list where the url is a regex") {
       val alerts = List[ZapAlert](
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/888/here"),
-        ZapAlert(cweid = "", url = "")
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/8888/here"),
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/1/here")
       )
 
       val zapTest = new StubbedZapTest {
@@ -321,7 +323,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
       }
 
       val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 1
+      filteredAlerts.size shouldBe 2
     }
 
     it("should filter out multiple alerts that match both url and cweid of the ignored alerts list") {
