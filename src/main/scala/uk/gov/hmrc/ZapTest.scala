@@ -16,14 +16,20 @@
 
 package uk.gov.hmrc
 
-import java.util.UUID
-import play.api.libs.json._
-import org.scalatest.WordSpec
 import java.io._
-import scala.Console
-import uk.gov.hmrc.utils.{InsecureClient, TestHelper}
+import java.util.UUID
+
+import org.scalatest.WordSpec
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json._
+import uk.gov.hmrc.utils.{TestHelper, WsClient}
+
+import scala.util.Try
 
 trait ZapTest extends WordSpec {
+
+  val logger: Logger = LoggerFactory.getLogger("[ZAP Logger]")
+
   /**
     * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
     * you can filter them out by adding to this list, using the cweid and the url that the alert was found on.
@@ -43,7 +49,7 @@ trait ZapTest extends WordSpec {
     * just localhost:port).
     */
   val testUrl: String
-  lazy val theClient = new InsecureClient
+  lazy val theClient = new WsClient()
 
   /**
     * Not a required field. This url is added as the base url to your context.
@@ -94,32 +100,27 @@ trait ZapTest extends WordSpec {
     */
   val testingAnApi: Boolean = false
 
-  implicit val zapAlertReads = Json.reads[ZapAlert]
-  implicit val zapAlertsReads = Json.reads[ZapAlerts]
+  implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
+  implicit val zapAlertsReads: Reads[ZapAlerts] = Json.reads[ZapAlerts]
 
-  def appendSlashToBaseUrlIfNeeded(): String = {
-    if (!zapBaseUrl.endsWith("/")) zapBaseUrl + "/" else zapBaseUrl
-  }
+  def callZapApi(queryPath: String, params: (String, String)*): String = {
+    val (status, response) = theClient.get(zapBaseUrl, queryPath, params: _*)
 
-  def callZapApiTo(url: String): (Int, String) = {
-    val completeUrl: String = appendSlashToBaseUrlIfNeeded() + url
-    val theResponse = theClient.getRawResponse(completeUrl)
-    val statusCode = theResponse._1
-    val responseBody = theResponse._2
-    if (statusCode != 200) fail(s"The ZAP API returned a $statusCode status when you called it using: $completeUrl. \n The response body was: $responseBody")
-    theResponse
+    if (status != 200) {
+      fail(s"Expected response code is 200, received:$status")
+    }
+    response
   }
 
   def hasCallCompleted(url: String): Boolean = {
-    val jsonResponse = Json.parse(callZapApiTo(url)._2)
+    val jsonResponse = Json.parse(callZapApi(url))
     val status = (jsonResponse \ "status").as[String]
     if (status == "100") true else false
   }
 
   def createPolicy(): String = {
     val policyName = UUID.randomUUID.toString
-    val createPolicy = s"json/ascan/action/addScanPolicy/?scanPolicyName=$policyName"
-    callZapApiTo(createPolicy)
+    callZapApi("/json/ascan/action/addScanPolicy", "scanPolicyName" -> policyName)
     policyName
   }
 
@@ -128,71 +129,52 @@ trait ZapTest extends WordSpec {
     val scannersToDisableForUiTesting = "4,5,42,10000,10001,10013,10014,10022,20000,20001,20002,20003,20004,20005,20006,30001,30002,30003,40000,40001,40002,40006,40010,40011,40018,40020,40022,40027,40028,40029,90001,90029,90030"
     val scannersToEnableForApiTesting = "0,2,3,6,7,42,10010,10011,10012,10015,10016,10017,10019,10020,10021,10023,10024,10025,10026,10027,10032,10040,10045,10048,10095,10105,10202,20012,20014,20015,20016,20017,20018,20019,30001,30002,30003,40003,40008,40009,40012,40013,40014,40016,40017,40018,40019,40020,40021,40022,40023,50000,50001,90001,90011,90019,90020,90021,90022,90023,90024,90025,90026,90028,90029,90030,90033"
 
-
-    if(!testingAnApi) {
-      val disableScanners = s"json/ascan/action/disableScanners/?ids=$scannersToDisableForUiTesting&scanPolicyName=$policyName"
-      callZapApiTo(disableScanners)
+    if (!testingAnApi) {
+      callZapApi("/json/ascan/action/disableScanners", "ids" -> scannersToDisableForUiTesting, "scanPolicyName" -> policyName)
     }
     else {
-      val disableAllScanners = s"json/ascan/action/disableAllScanners/?scanPolicyName=$policyName"
-      callZapApiTo(disableAllScanners)
-      val enableApiScanners = s"json/ascan/action/enableScanners/?ids=$scannersToEnableForApiTesting&scanPolicyName=$policyName"
-      callZapApiTo(enableApiScanners)
+      callZapApi("/json/ascan/action/disableAllScanners", "scanPolicyName" -> policyName)
+      callZapApi("/json/ascan/action/enableScanners", "ids" -> scannersToEnableForApiTesting, "scanPolicyName" -> policyName)
     }
 
   }
 
   def createContext(): Context = {
     val contextName = UUID.randomUUID.toString
-    val createContext = s"json/context/action/newContext/?contextName=$contextName"
-    val jsonResponse = Json.parse(callZapApiTo(createContext)._2)
+    val response: String = callZapApi("/json/context/action/newContext", "contextName" -> contextName)
+    val jsonResponse = Json.parse(response)
     val contextId = (jsonResponse \ "contextId").as[String]
 
     Context(contextName, contextId)
   }
 
   def setUpContext(contextName: String): Unit = {
-    val limitContextToABaseUrl = s"json/context/action/includeInContext/?contextName=$contextName&regex=$contextBaseUrl"
-    callZapApiTo(limitContextToABaseUrl)
+    callZapApi("/json/context/action/includeInContext", "contextName" -> contextName, "regex" -> contextBaseUrl)
+    callZapApi("/json/context/action/excludeAllContextTechnologies", "contextName" -> contextName)
 
-    val excludeAllTechnologiesFromContext = s"json/context/action/excludeAllContextTechnologies/?contextName=$contextName"
-    callZapApiTo(excludeAllTechnologiesFromContext)
-
-    if(desiredTechnologyNames.nonEmpty) {
-      val includeDesiredTechnologiesInContext = s"json/context/action/includeContextTechnologies/?contextName=$contextName&technologyNames=$desiredTechnologyNames"
-      callZapApiTo(includeDesiredTechnologiesInContext)
+    if (desiredTechnologyNames.nonEmpty) {
+      callZapApi("/json/context/action/includeContextTechnologies", "contextName" -> contextName, "technologyNames" -> desiredTechnologyNames)
     }
 
-    if(routeToBeIgnoredFromContext.nonEmpty) {
-      val excludeRouteFromContext = s"json/context/action/excludeFromContext/?contextName=$contextName&regex=$routeToBeIgnoredFromContext"
-      callZapApiTo(excludeRouteFromContext)
+    if (routeToBeIgnoredFromContext.nonEmpty) {
+      callZapApi("/json/context/action/excludeFromContext", "contextName" -> contextName, "regex" -> routeToBeIgnoredFromContext)
     }
-
   }
 
   def tearDown(contextName: String, policyName: String): Unit = {
-    val removeContext = s"json/context/action/removeContext/?contextName=$contextName"
-    callZapApiTo(removeContext)
-
-    val removePolicy = s"json/ascan/action/removeScanPolicy/?scanPolicyName=$policyName"
-    callZapApiTo(removePolicy)
-
-    val removeAlerts = s"json/core/action/deleteAllAlerts"
-    callZapApiTo(removeAlerts)
+    callZapApi("/json/context/action/removeContext", "contextName" -> contextName)
+    callZapApi("/json/ascan/action/removeScanPolicy", "scanPolicyName" -> policyName)
+    callZapApi("/json/core/action/deleteAllAlerts")
   }
 
   def runAndCheckStatusOfSpider(contextName: String): Unit = {
-    val runSpiderScan = s"json/spider/action/scan/?url=$testUrl&contextName=$contextName"
-    callZapApiTo(runSpiderScan)
-
-    TestHelper.waitForCondition(hasCallCompleted("json/spider/view/status"), "Spider Timed Out", timeoutInSeconds = 600)
+    callZapApi("/json/spider/action/scan", "contextName" -> contextName)
+    TestHelper.waitForCondition(hasCallCompleted("/json/spider/view/status"), "Spider Timed Out", timeoutInSeconds = 600)
   }
 
   def runAndCheckStatusOfActiveScan(contextId: String, policyName: String): Unit = {
-    val runActiveScan = s"json/ascan/action/scan/?url=$testUrl&contextId=$contextId&scanPolicyName=$policyName"
-    callZapApiTo(runActiveScan)
-
-    TestHelper.waitForCondition(hasCallCompleted("json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
+    callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
+    TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
   }
 
   def writeHtmlReportToFile(text: String): File = {
@@ -224,17 +206,20 @@ trait ZapTest extends WordSpec {
 
       reportText = reportText + "<tr bgcolor=\""+alertColour+"\"><td colspan=2><b>" + alert.risk + "</b></td></tr><tr> <td>URL </td><td>" + alert.url + "</td></tr> <tr> <td> Description </td><td>" + alert.description + "</td> </tr><tr><td> Evidence </td><td>" + xml.Utility.escape(alert.evidence) + "</td></tr><tr><td> CWE ID </td><td>" + xml.Utility.escape(alert.cweid) + "</td></tr>"
 
-      println("***********************************")
-      println(s"URL:         ${alert.url}")
-      println(s"CWE ID:      ${alert.cweid}")
-      println(s"Alert Name:  ${alert.alert}")
-      println(s"Description: ${alert.description}")
-      println(s"Risk Level:  ${alert.risk}")
-      println(s"Evidence:    ${alert.evidence.take(100).trim}...")
+      logger.debug(
+        s"""
+          |URL:         ${alert.url}
+          |CWE ID:      ${alert.cweid}
+          |Alert Name:  ${alert.alert}
+          |Description: ${alert.description}
+          |Risk Level:  ${alert.risk}
+          |Evidence:    ${alert.evidence.take(100).trim}...
+        """.stripMargin)
     }
 
     val filePath = writeHtmlReportToFile(reportText).getCanonicalPath
-    println(Console.BOLD + s"For more information on alerts, please see the html report at $filePath")
+
+    logger.info(s"For more information on alerts, please see the html report at $filePath")
 
   }
 
@@ -271,10 +256,9 @@ trait ZapTest extends WordSpec {
 
   }
 
-
   def parseAlerts: List[ZapAlert] = {
-    val getAlerts = s"json/core/view/alerts/?baseurl=$alertsBaseUrl"
-    val jsonResponse = Json.parse(callZapApiTo(getAlerts)._2)
+    val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> alertsBaseUrl)
+    val jsonResponse = Json.parse(response)
     val allAlerts = (jsonResponse \ "alerts").as[List[ZapAlert]]
     allAlerts
   }
@@ -282,8 +266,10 @@ trait ZapTest extends WordSpec {
   "Setting up the policy and context" should {
     "complete successfully" in {
       policyName = createPolicy()
+      logger.info(s"Creating policy: $policyName")
       setUpPolicy(policyName)
       context = createContext()
+      logger.info(s"Creating context: $context")
       setUpContext(context.name)
     }
   }
@@ -309,7 +295,12 @@ trait ZapTest extends WordSpec {
 
   "Tearing down the policy, context and alerts" should {
     "complete successfully" in {
-      tearDown(context.name, policyName)
+      if(!Try(System.getProperty("zap.skipTearDown").toBoolean).getOrElse(false)){
+        logger.debug(s"Removing ZAP Context (${context.name}) Policy ($policyName), and all alerts.")
+        tearDown(context.name, policyName)
+      } else {
+        logger.debug("Skipping Tear Down")
+      }
     }
   }
 }
