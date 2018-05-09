@@ -24,9 +24,6 @@ object HmrcBuild extends Build {
 
   val appName = "zap-automation"
 
-  val hmrcRepoHost = java.lang.System.getProperty("hmrc.repo.host", "https://nexus-preview.tax.service.gov.uk")
-
-
   lazy val microservice = Project(appName, file("."))
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
     .settings(
@@ -34,7 +31,6 @@ object HmrcBuild extends Build {
       libraryDependencies ++= AppDependencies(),
       crossScalaVersions := Seq("2.11.7"),
       resolvers := Seq(
-        "hmrc-snapshots" at hmrcRepoHost + "/content/repositories/hmrc-snapshots",
         Resolver.bintrayRepo("hmrc", "releases"),
         "typesafe-releases" at "http://repo.typesafe.com/typesafe/releases/"
       )
