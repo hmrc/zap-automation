@@ -20,15 +20,15 @@ import java.io._
 import java.util.UUID
 
 import org.scalatest.WordSpec
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
 import play.api.libs.json._
-import uk.gov.hmrc.utils.{TestHelper, WsClient}
+import uk.gov.hmrc.utils.{TestHelper, WsClient, ZapConfig, ZapLogger}
 
 import scala.util.Try
 
 trait ZapTest extends WordSpec {
 
-  val logger: Logger = LoggerFactory.getLogger("[ZAP Logger]")
+  val logger: Logger = ZapLogger.logger
 
   /**
     * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
@@ -277,7 +277,12 @@ trait ZapTest extends WordSpec {
   "Kicking off the scans" should {
     "complete successfully" in {
       runAndCheckStatusOfSpider(context.name)
-      runAndCheckStatusOfActiveScan(context.id, policyName)
+      if (ZapConfig.activeScan) {
+        logger.info(s"Active Scan Config: is set to: ${ZapConfig.activeScan}. Triggering Active Scan.")
+        runAndCheckStatusOfActiveScan(context.id, policyName)
+      }
+      else
+        logger.info(s"Active Scan Config: is set to: ${ZapConfig.activeScan}. Active Scan is NOT triggered.")
     }
   }
 
