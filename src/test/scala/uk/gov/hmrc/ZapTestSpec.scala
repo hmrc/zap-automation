@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc
 
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
@@ -158,7 +159,12 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
 
   describe("runAndCheckStatusOfActiveScan") {
 
-    it("should call Zap API to run the active scan") {
+    it("should call Zap API to run the active scan only if activeScan config is set to true") {
+      val zapTest = new StubbedZapTest {
+        logger.info("Overriding default activeScan config for test")
+        override val zapConfig: Config = ConfigFactory.parseString("activeScan=true")
+      }
+
       val contextId = ""
       val policyName = ""
 
@@ -166,6 +172,16 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
 
       zapTest.runAndCheckStatusOfActiveScan(contextId, policyName)
       verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
+    }
+
+    it("should not call Zap API to run the active scan if activeScan config is set to false") {
+      val contextId = ""
+      val policyName = ""
+
+      when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
+
+      zapTest.runAndCheckStatusOfActiveScan(contextId, policyName)
+      Mockito.verifyZeroInteractions(wsClientMock)
     }
   }
 

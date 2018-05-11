@@ -19,16 +19,18 @@ package uk.gov.hmrc
 import java.io._
 import java.util.UUID
 
+import com.typesafe.config.Config
 import org.scalatest.WordSpec
 import org.slf4j.Logger
 import play.api.libs.json._
-import uk.gov.hmrc.utils.{TestHelper, WsClient, ZapConfig, ZapLogger}
+import uk.gov.hmrc.utils.{LoadConfig, TestHelper, WsClient, ZapLogger}
 
 import scala.util.Try
 
 trait ZapTest extends WordSpec {
 
   val logger: Logger = ZapLogger.logger
+  val zapConfig: Config = LoadConfig.extractedConfig
 
   /**
     * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
@@ -173,8 +175,17 @@ trait ZapTest extends WordSpec {
   }
 
   def runAndCheckStatusOfActiveScan(contextId: String, policyName: String): Unit = {
-    callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
-    TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
+    val isActiveScanRequired = zapConfig.getBoolean("activeScan")
+
+    if (isActiveScanRequired) {
+
+      logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Triggering Active Scan.")
+
+      callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
+      TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
+    }
+    else
+      logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Active Scan is NOT triggered.")
   }
 
   def writeHtmlReportToFile(text: String): File = {
@@ -277,12 +288,7 @@ trait ZapTest extends WordSpec {
   "Kicking off the scans" should {
     "complete successfully" in {
       runAndCheckStatusOfSpider(context.name)
-      if (ZapConfig.activeScan) {
-        logger.info(s"Active Scan Config: is set to: ${ZapConfig.activeScan}. Triggering Active Scan.")
-        runAndCheckStatusOfActiveScan(context.id, policyName)
-      }
-      else
-        logger.info(s"Active Scan Config: is set to: ${ZapConfig.activeScan}. Active Scan is NOT triggered.")
+      runAndCheckStatusOfActiveScan(context.id, policyName)
     }
   }
 

@@ -20,7 +20,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import org.slf4j.Logger
 
 
-object ZapConfig {
+object LoadConfig {
 
   val logger: Logger = ZapLogger.logger
   val config: Config = ConfigFactory.load()
@@ -31,7 +31,5 @@ object ZapConfig {
     logger.info(s"Below Config is used by Zap Automation Library \n" +
       extractedConfig.root().render(renderOpts))
   }
-
-  def activeScan: Boolean = extractedConfig.getBoolean("activeScan")
 
 }
