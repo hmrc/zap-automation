@@ -267,6 +267,19 @@ trait ZapTest extends WordSpec {
 
   }
 
+  def applyFailureThreshold(relevantAlerts: List[ZapAlert]): Unit = {
+
+    val remainingAlerts = zapConfig.getString("failureThreshold") match {
+      case "High" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low" || zapAlert.risk == "Medium")
+      case "Medium" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low")
+      case "Low" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
+    }
+
+    if (remainingAlerts.nonEmpty) {
+      fail(s"Zap found some new alerts - see above!")
+    }
+  }
+
   def parseAlerts: List[ZapAlert] = {
     val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> alertsBaseUrl)
     val jsonResponse = Json.parse(response)
@@ -296,11 +309,9 @@ trait ZapTest extends WordSpec {
     "not find any unknown alerts" in {
 
       val relevantAlerts = filterAlerts(parseAlerts)
-
-      if (relevantAlerts.nonEmpty) {
-        reportAlerts(relevantAlerts)
-        fail(s"Zap found some new alerts - see above!")
-      }
+      applyFailureThreshold(
+        relevantAlerts)
+      reportAlerts(relevantAlerts)
     }
   }
 
