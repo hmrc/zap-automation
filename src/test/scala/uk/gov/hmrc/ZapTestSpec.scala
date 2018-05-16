@@ -133,7 +133,7 @@ class ZapTestSpec extends BaseSpec {
       when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
       zapTest.runAndCheckStatusOfSpider(contextName)
-      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/spider/action/scan", "contextName" -> contextName)
+      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/spider/action/scan", "contextName" -> contextName, "url" -> zapTest.testUrl)
       verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/spider/view/status")
     }
   }
@@ -152,7 +152,7 @@ class ZapTestSpec extends BaseSpec {
       when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
       zapTest.runAndCheckStatusOfActiveScan(contextId, policyName)
-      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
+      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> zapTest.testUrl)
     }
 
     it("should not call Zap API to run the active scan if activeScan config is set to false") {

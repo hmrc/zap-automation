@@ -17,7 +17,6 @@
 package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.exceptions.TestFailedException
 
 class FailureThresholdSpec extends BaseSpec {
 
@@ -30,20 +29,29 @@ class FailureThresholdSpec extends BaseSpec {
 
     val alerts = List[ZapAlert](
       ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Medium"),
       ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "High"),
       ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
     )
-
-    try {
-      zapTest.applyFailureThreshold(alerts)
-    }
-    catch {
-      case e: TestFailedException => e.getMessage() shouldBe "Zap found some new alerts - see above!"
-    }
+    assert(!zapTest.testSucceeded(alerts))
   }
 
-  it("should not fail if there are no alerts above the threshold specified in the config") {
+  it("should fail if there are alerts matching the threshold specified in the config") {
+
+    val zapTest = new StubbedZapTest {
+      logger.info("Overriding default failureThreshold config for test")
+      override val zapConfig: Config = ConfigFactory.parseString("failureThreshold=Medium")
+    }
+
+    val alerts = List[ZapAlert](
+      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
+      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Medium"),
+      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
+    )
+
+    assert(!zapTest.testSucceeded(alerts))
+  }
+
+  it("should not fail if there are alerts below the threshold specified in the config") {
 
     val zapTest = new StubbedZapTest {
       logger.info("Overriding default failureThreshold config for test")
@@ -55,7 +63,7 @@ class FailureThresholdSpec extends BaseSpec {
       ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
     )
 
-    zapTest.applyFailureThreshold(alerts)
+    assert(zapTest.testSucceeded(alerts))
   }
 
   it("should fail a Low risk alert for default failure threshold") {
@@ -64,12 +72,7 @@ class FailureThresholdSpec extends BaseSpec {
       ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low")
     )
 
-    try {
-      zapTest.applyFailureThreshold(alerts)
-    }
-    catch {
-      case e: TestFailedException => e.getMessage() shouldBe "Zap found some new alerts - see above!"
-    }
+    assert(!zapTest.testSucceeded(alerts))
   }
 
   it("should not fail for an Informational alert") {
@@ -82,6 +85,6 @@ class FailureThresholdSpec extends BaseSpec {
     val alerts = List[ZapAlert](
       ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
     )
-    zapTest.applyFailureThreshold(alerts)
+    assert(zapTest.testSucceeded(alerts))
   }
 }

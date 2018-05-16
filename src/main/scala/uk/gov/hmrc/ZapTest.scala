@@ -170,7 +170,7 @@ trait ZapTest extends WordSpec {
   }
 
   def runAndCheckStatusOfSpider(contextName: String): Unit = {
-    callZapApi("/json/spider/action/scan", "contextName" -> contextName)
+    callZapApi("/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
     TestHelper.waitForCondition(hasCallCompleted("/json/spider/view/status"), "Spider Timed Out", timeoutInSeconds = 600)
   }
 
@@ -181,7 +181,7 @@ trait ZapTest extends WordSpec {
 
       logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Triggering Active Scan.")
 
-      callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
+      callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
       TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
     }
     else
@@ -267,17 +267,16 @@ trait ZapTest extends WordSpec {
 
   }
 
-  def applyFailureThreshold(relevantAlerts: List[ZapAlert]): Unit = {
+  def testSucceeded(relevantAlerts: List[ZapAlert]): Boolean = {
 
-    val remainingAlerts = zapConfig.getString("failureThreshold") match {
+    val failingAlerts = zapConfig.getString("failureThreshold") match {
       case "High" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low" || zapAlert.risk == "Medium")
       case "Medium" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low")
       case "Low" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
+      case _ => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
     }
 
-    if (remainingAlerts.nonEmpty) {
-      fail(s"Zap found some new alerts - see above!")
-    }
+    failingAlerts.isEmpty
   }
 
   def parseAlerts: List[ZapAlert] = {
@@ -309,9 +308,10 @@ trait ZapTest extends WordSpec {
     "not find any unknown alerts" in {
 
       val relevantAlerts = filterAlerts(parseAlerts)
-      applyFailureThreshold(
-        relevantAlerts)
       reportAlerts(relevantAlerts)
+      withClue ("Zap found some new alerts - see above!") {
+        assert(testSucceeded(relevantAlerts))
+      }
     }
   }
 
