@@ -19,16 +19,18 @@ package uk.gov.hmrc
 import java.io.{BufferedWriter, File, FileWriter}
 import java.util.UUID
 
+import com.typesafe.config.Config
 import org.scalatest.WordSpec
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
 import play.api.libs.json._
-import uk.gov.hmrc.utils.{TestHelper, WsClient}
+import uk.gov.hmrc.utils.{LoadConfig, TestHelper, WsClient, ZapLogger}
 
 import scala.util.Try
 
 trait ZapTest extends WordSpec {
 
-  val logger: Logger = LoggerFactory.getLogger("[ZAP Logger]")
+  val logger: Logger = ZapLogger.logger
+  val zapConfig: Config = LoadConfig.extractedConfig
 
   /**
     * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
@@ -167,13 +169,22 @@ trait ZapTest extends WordSpec {
   }
 
   def runAndCheckStatusOfSpider(contextName: String): Unit = {
-    callZapApi("/json/spider/action/scan", "contextName" -> contextName)
+    callZapApi("/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
     TestHelper.waitForCondition(hasCallCompleted("/json/spider/view/status"), "Spider Timed Out", timeoutInSeconds = 600)
   }
 
   def runAndCheckStatusOfActiveScan(contextId: String, policyName: String): Unit = {
-    callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
-    TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
+    val isActiveScanRequired = zapConfig.getBoolean("activeScan")
+
+    if (isActiveScanRequired) {
+
+      logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Triggering Active Scan.")
+
+      callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
+      TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
+    }
+    else
+      logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Active Scan is NOT triggered.")
   }
 
   def reportAlerts(relevantAlerts: List[ZapAlert]): Unit = {
@@ -195,6 +206,18 @@ trait ZapTest extends WordSpec {
       relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
     else
       relevantAlerts
+  }
+
+  def testSucceeded(relevantAlerts: List[ZapAlert]): Boolean = {
+
+    val failingAlerts = zapConfig.getString("failureThreshold") match {
+      case "High" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low" || zapAlert.risk == "Medium")
+      case "Medium" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low")
+      case "Low" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
+      case _ => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
+    }
+
+    failingAlerts.isEmpty
   }
 
   def parsedAlerts: List[ZapAlert] = {
@@ -222,13 +245,11 @@ trait ZapTest extends WordSpec {
   }
 
   "Inspecting the alerts" should {
-    "no unfiltered alerts found" in {
+    "not find any unknown alerts" in {
       val relevantAlerts = filterAlerts(parsedAlerts)
-      val sortedAlerts=  relevantAlerts.sortBy { _.severityScore() }
-      reportAlerts(sortedAlerts)
-
-      if (relevantAlerts.nonEmpty) {
-        fail(s"Zap found some new alerts - see above!")
+      reportAlerts(relevantAlerts)
+      withClue ("Zap found some new alerts - see above!") {
+        assert(testSucceeded(relevantAlerts))
       }
     }
   }

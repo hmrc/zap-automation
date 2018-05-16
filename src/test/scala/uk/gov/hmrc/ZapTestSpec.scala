@@ -16,33 +16,15 @@
 
 package uk.gov.hmrc
 
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterEach, FunSpec, Matchers}
-import uk.gov.hmrc.utils.WsClient
 
-class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
+class ZapTestSpec extends BaseSpec {
 
-  val wsClientMock: WsClient = mock[WsClient]
   private val jsonStatus = """{"status": "100"}"""
-
-  class StubbedZapTest extends ZapTest {
-    override lazy val theClient: WsClient = wsClientMock
-    override val zapBaseUrl: String = "http://zap.url.com"
-    override val testUrl: String = "something"
-    override val contextBaseUrl: String = "http://context.base.url.*"
-    override val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
-    override val alertsBaseUrl: String = "http://alerts.base.url"
-  }
-
-  val zapTest = new StubbedZapTest
-
-  override protected def beforeEach(): Unit = {
-    Mockito.reset(wsClientMock)
-  }
 
   describe("callZapApiTo") {
 
@@ -151,21 +133,36 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
       when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
       zapTest.runAndCheckStatusOfSpider(contextName)
-      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/spider/action/scan", "contextName" -> contextName)
+      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/spider/action/scan", "contextName" -> contextName, "url" -> zapTest.testUrl)
       verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/spider/view/status")
     }
   }
 
   describe("runAndCheckStatusOfActiveScan") {
 
-    it("should call Zap API to run the active scan") {
+    it("should call Zap API to run the active scan only if activeScan config is set to true") {
+      val zapTest = new StubbedZapTest {
+        logger.info("Overriding default activeScan config for test")
+        override val zapConfig: Config = ConfigFactory.parseString("activeScan=true")
+      }
+
       val contextId = ""
       val policyName = ""
 
       when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
       zapTest.runAndCheckStatusOfActiveScan(contextId, policyName)
-      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName)
+      verify(wsClientMock).get(zapTest.zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> zapTest.testUrl)
+    }
+
+    it("should not call Zap API to run the active scan if activeScan config is set to false") {
+      val contextId = ""
+      val policyName = ""
+
+      when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
+
+      zapTest.runAndCheckStatusOfActiveScan(contextId, policyName)
+      Mockito.verifyZeroInteractions(wsClientMock)
     }
   }
 
@@ -187,12 +184,11 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
 
   describe("report") {
     it("should create html for a report if there are alerts") {
-      val alert1: ZapAlert = new ZapAlert(
-        other = "",
+      val alert1: ZapAlert = new ZapAlert(other = "",
         evidence = "Some evidence",
         pluginId = "",
         cweid = "16",
-        confidence = "Medium",
+        confidence = "",
         wascid = "",
         description = "",
         messageId = "",
@@ -202,25 +198,24 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
         alert = "",
         param = "",
         attack = "",
-        name = "Cookie Without SameSite Attribute",
+        name = "",
         risk = "High",
         id = "")
 
-      val alert2: ZapAlert = new ZapAlert(
-        other = "some other info",
+      val alert2: ZapAlert = new ZapAlert(other = "",
         evidence = "Some other evidence",
-        pluginId = "10010",
+        pluginId = "",
         cweid = "200",
-        confidence = "High",
+        confidence = "",
         wascid = "",
-        description = "Some detailed description",
+        description = "",
         messageId = "",
-        url = "www.google.com",
+        url = "http://dawn.com/hello",
         reference = "",
-        solution = "fix it!",
+        solution = "",
         alert = "",
         param = "",
-        attack = "attack!",
+        attack = "",
         name = "",
         risk = "Medium",
         id = "")
@@ -229,7 +224,7 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
         evidence = "Some more evidence",
         pluginId = "",
         cweid = "3",
-        confidence = "Low",
+        confidence = "",
         wascid = "",
         description = "",
         messageId = "",
@@ -243,238 +238,10 @@ class ZapTestSpec extends FunSpec with Matchers with MockitoSugar with BeforeAnd
         risk = "Low",
         id = "")
 
-      val alert4: ZapAlert = new ZapAlert(
-        other = "",
-        evidence = "Some evidence",
-        pluginId = "",
-        cweid = "16",
-        confidence = "Low",
-        wascid = "",
-        description = "",
-        messageId = "",
-        url = "http://dawn.com/",
-        reference = "",
-        solution = "",
-        alert = "",
-        param = "",
-        attack = "",
-        name = "Cookie Without SameSite Attribute",
-        risk = "Info",
-        id = "")
-
-      //val expectedReportText = """<tr bgcolor="red"><td colspan=2><b>High</b></td></tr><tr> <td>URL </td><td>http://dawn.com/</td></tr> <tr> <td> Description </td><td></td> </tr><tr><td> Evidence </td><td>Some evidence</td></tr><tr><td> CWE ID </td><td>16</td></tr><tr bgcolor="orange"><td colspan=2><b>Medium</b></td></tr><tr> <td>URL </td><td>http://dawn.com/hello</td></tr> <tr> <td> Description </td><td></td> </tr><tr><td> Evidence </td><td>Some other evidence</td></tr><tr><td> CWE ID </td><td>200</td></tr><tr bgcolor="yellow"><td colspan=2><b>Low</b></td></tr><tr> <td>URL </td><td>http://dawn.com/hello</td></tr> <tr> <td> Description </td><td></td> </tr><tr><td> Evidence </td><td>Some more evidence</td></tr><tr><td> CWE ID </td><td>3</td></tr>"""
-      val parsedAlerts: List[ZapAlert] = List(alert1, alert2, alert3, alert4)
+      val parsedAlerts: List[ZapAlert] = List(alert1, alert2, alert3)
       zapTest.reportAlerts(parsedAlerts)
-      //zapTest.reportText shouldBe expectedReportText
     }
   }
 
-  describe("filterAlerts") {
 
-    it("should filter out optimizely alerts when they are present and the ignoreOptimizely flag is true") {
-      val alerts = List[ZapAlert](
-        ZapAlert(evidence = "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = ""),
-        ZapAlert(evidence = "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = ""),
-        ZapAlert(evidence = "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val ignoreOptimizelyAlerts: Boolean = true
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 2
-
-    }
-
-    it("should not filter out optimizely alerts when they are present and the ignoreOptimizely flag is false") {
-      val alerts = List[ZapAlert](
-        ZapAlert("", "<script src=\"https://cdn.optimizely.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = ""),
-        ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = ""),
-        ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val ignoreOptimizelyAlerts: Boolean = false
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 3
-    }
-
-    it("should not filter out optimizely alerts when they are not present and the ignoreOptimizely flag is true") {
-      val alerts = List[ZapAlert](
-        ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = ""),
-        ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = ""),
-        ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val ignoreOptimizelyAlerts: Boolean = true
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 3
-    }
-
-    it("should filter out alerts that match cweid and url of the ignored alerts list where the url is exact") {
-      val alerts = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://beccy.com/"),
-        ZapAlert(cweid = "", url = ""),
-        ZapAlert(cweid = "", url = "")
-      )
-
-      val zapTest = new StubbedZapTest {
-        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "http://beccy.com/")
-        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 2
-    }
-
-    it("should filter out alerts that match cweid and url of the ignored alerts list where the url is a regex") {
-      val alerts = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/888/here"),
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/8888/here"),
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/1/here")
-      )
-
-      val zapTest = new StubbedZapTest {
-        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = """http://localhost:9999/hello/\w{3}/here""")
-        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 2
-    }
-
-    it("should filter out multiple alerts that match both url and cweid of the ignored alerts list") {
-      val alerts = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here"),
-        ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C4/here"),
-        ZapAlert(cweid = "18", url = "http://localhost:9999/hello/here")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List[ZapAlertFilter](
-          ZapAlertFilter(cweid= "16", url = """http://localhost:9999/hello/\w{9}/here"""),
-          ZapAlertFilter(cweid= "17", url = """http://localhost:9999/hello/\w{10}/here"""),
-          ZapAlertFilter(cweid= "18", url = "http://localhost:9999/hello/here")
-        )
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 0
-    }
-
-    it("should not filter out alerts that match url but not cweid of the ignored alerts list where the url is a regex") {
-      val alerts = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here"),
-        ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C/here")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] =
-          List(ZapAlertFilter(cweid= "16", url = """http://localhost:9999/hello/\w{9}/here"""))
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 1
-    }
-
-    it("should not filter out alerts that match cweid but not url of the ignored alerts list where the url is a regex") {
-      val alerts = List[ZapAlert](
-          ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here"),
-          ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921C/here"),
-          ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid= "16", url = """http://localhost:9999/hello/\w{9}/here"""))
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 1
-    }
-
-    it("should not filter out alerts that match cweid but not url of the ignored alerts list where the url is exact") {
-      val alerts = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here"),
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here"))
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 1
-    }
-
-    it("should filter urls that include question marks (url parameters)") {
-      val alerts = List[ZapAlert] (
-        ZapAlert(cweid = "16", url = "http://localhost:99991/hello/SB363126A/optional/something-else?param1=1234"),
-        ZapAlert(cweid = "16", url = "http://localhost:99991/hello/SB363126A/optional/something-else?param1=1234"),
-        ZapAlert(cweid = "16", url = "http://localhost:99991/hello/SB363126A/something-else?param1=1234")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid= "16", url = """http://localhost:99991/hello/SB363126A(/optional)?/something-else\?param1=1234"""))
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 0
-    }
-
-    it("should filter urls that include dots (domain separators)") {
-      val alerts = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "https://www.gstatic.com/chrome/intelligence/"),
-        ZapAlert(cweid = "16", url = "https://www.gstatic.com/chrome/intelligence/anything-at-all")
-      )
-
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid= "16", url = """https://www\.gstatic\.com/chrome/intelligence/.*"""))
-      }
-
-      val filteredAlerts = zapTest.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 0
-    }
-  }
-
-  describe("parseAlerts") {
-
-    it("should parse alerts from the Zap API") {
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200,
-        """{
-                                                                                      "alerts": [
-                                                                                      {
-                                                                                      "sourceid": "",
-                                                                                      "other": "Other text",
-                                                                                      "method": "",
-                                                                                      "evidence": "",
-                                                                                      "pluginId": "",
-                                                                                      "cweid": "",
-                                                                                      "confidence": "",
-                                                                                      "wascid": "",
-                                                                                      "description": "",
-                                                                                      "messageId": "",
-                                                                                      "url": "",
-                                                                                      "reference": "",
-                                                                                      "solution": "",
-                                                                                      "alert": "",
-                                                                                      "param": "",
-                                                                                      "attack": "",
-                                                                                      "name": "",
-                                                                                      "risk": "",
-                                                                                      "id": ""
-                                                                                      }
-                                                                                      ]
-                                                                                      }"""))
-
-      val parsedAlerts = zapTest.parsedAlerts
-      val alert1: ZapAlert = ZapAlert("Other text", "", "", "","", "", "","", "", "","", "", "","", "", "", "")
-      parsedAlerts should contain theSameElementsAs List(alert1)
-    }
-  }
 }
