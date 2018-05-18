@@ -21,6 +21,9 @@ import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.exceptions.TestFailedException
+import play.api.libs.json._
+
+import scala.xml.{Elem, Node, NodeSeq, XML}
 
 class ZapTestSpec extends BaseSpec {
 
@@ -181,67 +184,4 @@ class ZapTestSpec extends BaseSpec {
 
     }
   }
-
-  describe("report") {
-    it("should create html for a report if there are alerts") {
-      val alert1: ZapAlert = new ZapAlert(other = "",
-        evidence = "Some evidence",
-        pluginId = "",
-        cweid = "16",
-        confidence = "",
-        wascid = "",
-        description = "",
-        messageId = "",
-        url = "http://dawn.com/",
-        reference = "",
-        solution = "",
-        alert = "",
-        param = "",
-        attack = "",
-        name = "",
-        risk = "High",
-        id = "")
-
-      val alert2: ZapAlert = new ZapAlert(other = "",
-        evidence = "Some other evidence",
-        pluginId = "",
-        cweid = "200",
-        confidence = "",
-        wascid = "",
-        description = "",
-        messageId = "",
-        url = "http://dawn.com/hello",
-        reference = "",
-        solution = "",
-        alert = "",
-        param = "",
-        attack = "",
-        name = "",
-        risk = "Medium",
-        id = "")
-
-      val alert3: ZapAlert = new ZapAlert(other = "",
-        evidence = "Some more evidence",
-        pluginId = "",
-        cweid = "3",
-        confidence = "",
-        wascid = "",
-        description = "",
-        messageId = "",
-        url = "http://dawn.com/hello",
-        reference = "",
-        solution = "",
-        alert = "",
-        param = "",
-        attack = "",
-        name = "",
-        risk = "Low",
-        id = "")
-
-      val parsedAlerts: List[ZapAlert] = List(alert1, alert2, alert3)
-      zapTest.reportAlerts(parsedAlerts)
-    }
-  }
-
-
 }

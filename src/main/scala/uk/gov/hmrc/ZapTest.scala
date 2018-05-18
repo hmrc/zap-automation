@@ -187,13 +187,19 @@ trait ZapTest extends WordSpec {
       logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Active Scan is NOT triggered.")
   }
 
-  def reportAlerts(relevantAlerts: List[ZapAlert]): Unit = {
-    val file = new File("ZapReport.html")
+  def writeToFile(report: String): Unit = {
+    val directory: File = new File("target/reports")
+    if(!directory.exists()) { directory.mkdir() }
+    val file: File = new File(s"${directory.getAbsolutePath}/ZapReport.html")
     val writer = new BufferedWriter(new FileWriter(file))
-
-    writer.write(report.html.index(relevantAlerts).toString())
+    writer.write(report)
     writer.close()
+
     logger.info(s"HTML Report generated: file://${file.getAbsolutePath}")
+  }
+
+  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String): String = {
+    report.html.index(relevantAlerts, failureThreshold).toString()
   }
 
   def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
@@ -247,7 +253,7 @@ trait ZapTest extends WordSpec {
   "Inspecting the alerts" should {
     "not find any unknown alerts" in {
       val relevantAlerts = filterAlerts(parsedAlerts)
-      reportAlerts(relevantAlerts)
+      writeToFile(generateHtmlReport(relevantAlerts.sortBy{ _.severityScore() }, zapConfig.getString("failureThreshold")))
       withClue ("Zap found some new alerts - see above!") {
         assert(testSucceeded(relevantAlerts))
       }
