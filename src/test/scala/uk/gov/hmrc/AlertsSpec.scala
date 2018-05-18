@@ -225,7 +225,7 @@ class AlertsSpec extends BaseSpec {
                                                                                       ]
                                                                                       }"""))
 
-      val parsedAlerts = zapTest.parseAlerts
+      val parsedAlerts = zapTest.parsedAlerts
       val alert1: ZapAlert = ZapAlert("Other text", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
       parsedAlerts should contain theSameElementsAs List(alert1)
     }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc
 
-import java.io._
+import java.io.{BufferedWriter, File, FileWriter}
 import java.util.UUID
 
 import com.typesafe.config.Config
@@ -103,7 +103,6 @@ trait ZapTest extends WordSpec {
   val testingAnApi: Boolean = false
 
   implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
-  implicit val zapAlertsReads: Reads[ZapAlerts] = Json.reads[ZapAlerts]
 
   def callZapApi(queryPath: String, params: (String, String)*): String = {
     val (status, response) = theClient.get(zapBaseUrl, queryPath, params: _*)
@@ -188,71 +187,20 @@ trait ZapTest extends WordSpec {
       logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Active Scan is NOT triggered.")
   }
 
-  def writeHtmlReportToFile(text: String): File = {
-    val file = new File("ZapReport.html")
-    val bw = new BufferedWriter(new FileWriter(file))
-    bw.write("<html>\n")
-    bw.write("<head><style>table {\n      font-family: arial, sans-serif;\n    border-collapse: collapse;\n    width: 100%;\n    }td, th {\n    border: 1px solid #dddddd;\n    text-align: left;\n    padding: 8px;\n    }\n\n </style>")
-    bw.write("<title>HMRC Digital: Custom ZAP Report</title>\n")
-    bw.write("<h1>HMRC ZAP Report</h1>\n")
-    bw.write("</head>\n")
-    bw.write("<body>\n <table>\n<tr> <th> Alert Attribute </th> <th> Details </th></tr>")
+  def writeToFile(report: String): Unit = {
+    val directory: File = new File("target/reports")
+    if(!directory.exists()) { directory.mkdir() }
+    val file: File = new File(s"${directory.getAbsolutePath}/ZapReport.html")
+    val writer = new BufferedWriter(new FileWriter(file))
+    writer.write(report)
+    writer.close()
 
-    bw.write(text)
-    bw.write("</table>\n</body>\n")
-    bw.write("</html>\n")
-    bw.close()
-    file
+    logger.info(s"HTML Report generated: file://${file.getAbsolutePath}")
   }
 
-  var reportText: String = ""
-
-  def reportAlerts(relevantAlerts: List[ZapAlert]): Unit = {
-    relevantAlerts.foreach { alert: ZapAlert =>
-      var alertColour = "White"
-      if (alert.risk == "Low") {alertColour = "yellow"}
-      else if (alert.risk == "Medium") {alertColour = "orange"}
-      else if (alert.risk == "High") {alertColour = "red"}
-
-
-      reportText = reportText + "<tr bgcolor=\""+alertColour+"\"><td colspan=2><b>" + alert.risk + "</b></td></tr><tr> <td>URL </td><td>" + alert.url + "</td></tr> <tr> <td> Description </td><td>" + alert.description + "</td> </tr><tr><td> Evidence </td><td>" + xml.Utility.escape(alert.evidence) + "</td></tr><tr><td> CWE ID </td><td>" + xml.Utility.escape(alert.cweid) + "</td></tr>"
-
-      logger.debug(
-        s"""
-          |URL:         ${alert.url}
-          |CWE ID:      ${alert.cweid}
-          |Alert Name:  ${alert.alert}
-          |Description: ${alert.description}
-          |Risk Level:  ${alert.risk}
-          |Evidence:    ${alert.evidence.take(100).trim}...
-        """.stripMargin)
-    }
-
-    val filePath = writeHtmlReportToFile(reportText).getCanonicalPath
-
-    logger.info(s"For more information on alerts, please see the html report at $filePath")
-
+  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String): String = {
+    report.html.index(relevantAlerts, failureThreshold).toString()
   }
-
-  def reads(json: JsValue): ZapAlert = ZapAlert(
-    (json \ "other").as[String],
-    (json \ "evidence").as[String],
-    (json \ "pluginId").as[String],
-    (json \ "cweid").as[String],
-    (json \ "confidence").as[String],
-    (json \ "wascid").as[String],
-    (json \ "description").as[String],
-    (json \ "messageId").as[String],
-    (json \ "url").as[String],
-    (json \ "reference").as[String],
-    (json \ "solution").as[String],
-    (json \ "alert").as[String],
-    (json \ "param").as[String],
-    (json \ "attack").as[String],
-    (json \ "name").as[String],
-    (json \ "risk").as[String],
-    (json \ "id").as[String]
-  )
 
   def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
 
@@ -264,7 +212,6 @@ trait ZapTest extends WordSpec {
       relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
     else
       relevantAlerts
-
   }
 
   def testSucceeded(relevantAlerts: List[ZapAlert]): Boolean = {
@@ -279,11 +226,10 @@ trait ZapTest extends WordSpec {
     failingAlerts.isEmpty
   }
 
-  def parseAlerts: List[ZapAlert] = {
+  def parsedAlerts: List[ZapAlert] = {
     val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> alertsBaseUrl)
     val jsonResponse = Json.parse(response)
-    val allAlerts = (jsonResponse \ "alerts").as[List[ZapAlert]]
-    allAlerts
+    (jsonResponse \ "alerts").as[List[ZapAlert]]
   }
 
   "Setting up the policy and context" should {
@@ -306,9 +252,8 @@ trait ZapTest extends WordSpec {
 
   "Inspecting the alerts" should {
     "not find any unknown alerts" in {
-
-      val relevantAlerts = filterAlerts(parseAlerts)
-      reportAlerts(relevantAlerts)
+      val relevantAlerts = filterAlerts(parsedAlerts)
+      writeToFile(generateHtmlReport(relevantAlerts.sortBy{ _.severityScore() }, zapConfig.getString("failureThreshold")))
       withClue ("Zap found some new alerts - see above!") {
         assert(testSucceeded(relevantAlerts))
       }
@@ -324,17 +269,6 @@ trait ZapTest extends WordSpec {
         logger.debug("Skipping Tear Down")
       }
     }
-  }
-}
-
-case class ZapAlerts(alerts: List[ZapAlert])
-case class ZapAlert(other: String = "", evidence: String = "", pluginId: String = "", cweid: String, confidence: String = "", wascid: String = "", description: String = "", messageId: String = "", url: String, reference: String = "", solution: String = "", alert: String = "", param: String = "", attack: String = "", name: String = "", risk: String = "", id: String = "") {
-  def getFilter = ZapAlertFilter(cweid, url)
-}
-
-case class ZapAlertFilter(cweid: String, url: String) {
-  def matches(zapAlert: ZapAlert) = {
-    zapAlert.url.matches(url) && zapAlert.cweid.equals(cweid)
   }
 }
 

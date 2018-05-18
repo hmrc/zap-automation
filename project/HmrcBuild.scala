@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import play.twirl.sbt.SbtTwirl
 import sbt.Keys._
 import sbt._
 import uk.gov.hmrc.versioning.SbtGitVersioning
@@ -25,7 +26,7 @@ object HmrcBuild extends Build {
   val appName = "zap-automation"
 
   lazy val microservice = Project(appName, file("."))
-    .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
+    .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning, SbtTwirl)
     .settings(
       scalaVersion := "2.11.11",
       libraryDependencies ++= AppDependencies(),
@@ -40,12 +41,14 @@ object HmrcBuild extends Build {
 private object AppDependencies {
 
   val jerseyVersion = "1.19.3"
+  val ScalatraVersion = "2.5.4"
 
   import play.core.PlayVersion
 
   val compile = Seq(
     "com.typesafe.play" %% "play" % PlayVersion.current,
     "com.typesafe.play" %% "play-ws" % PlayVersion.current,
+    "org.scalatra" %% "scalatra" % ScalatraVersion,
     "org.slf4j" % "slf4j-api" % "1.7.25",
     "org.slf4j" % "slf4j-simple" % "1.7.25",
     "org.scalatest" %% "scalatest" % "3.0.3",
