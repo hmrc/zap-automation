@@ -33,14 +33,22 @@ class WsClient {
 
   def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String) = {
 
-    val client = asyncClient
+    val url = s"$zapBaseUrl$queryPath"
+    getRequest(url, params: _*)
+  }
 
-    val response: WSResponse = Await.result(client.url(s"$zapBaseUrl$queryPath")
+  def getRequest(url: String, params: (String, String)*): (Int, String) = {
+
+    val client = asyncClient
+    val response: WSResponse = Await.result(client.url(s"$url")
       .withHeaders("ContentType" -> "application/json;charset=utf-8")
       .withQueryString(params: _*)
       .get(), 60 seconds)
+
     client.close()
 
     (response.status, response.body)
+
   }
+
 }

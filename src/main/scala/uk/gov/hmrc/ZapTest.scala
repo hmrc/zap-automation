@@ -20,14 +20,12 @@ import java.io.{BufferedWriter, File, FileWriter}
 import java.util.UUID
 
 import com.typesafe.config.Config
-import org.scalatest.WordSpec
+import org.scalatest.{BeforeAndAfterAll, WordSpec}
 import org.slf4j.Logger
 import play.api.libs.json._
 import uk.gov.hmrc.utils.{LoadConfig, TestHelper, WsClient, ZapLogger}
 
-import scala.util.Try
-
-trait ZapTest extends WordSpec {
+trait ZapTest extends WordSpec with BeforeAndAfterAll{
 
   val logger: Logger = ZapLogger.logger
   val zapConfig: Config = LoadConfig.extractedConfig
@@ -232,6 +230,30 @@ trait ZapTest extends WordSpec {
     (jsonResponse \ "alerts").as[List[ZapAlert]]
   }
 
+  def healthCheckTestUrl(): Unit = {
+
+    if (zapConfig.getBoolean("debug.healthCheck")) {
+      logger.info(s"Checking if test Url: $testUrl is available to test.")
+      val successStatusRegex = "(2..|3..)"
+      val (status, response) = try {
+        theClient.getRequest(testUrl)
+      }
+      catch {
+        case e: Throwable => fail(s"Health check failed for test URL: $testUrl with exception:${e.getMessage}")
+      }
+
+      if (!status.toString.matches(successStatusRegex))
+        fail(s"Health Check failed for test URL: $testUrl with status:$status")
+    }
+    else {
+      logger.info("Health Checking Test Url is disabled. This may result in incorrect test result.")
+    }
+  }
+
+  override def beforeAll(): Unit = {
+    healthCheckTestUrl()
+  }
+
   "Setting up the policy and context" should {
     "complete successfully" in {
       policyName = createPolicy()
@@ -262,11 +284,12 @@ trait ZapTest extends WordSpec {
 
   "Tearing down the policy, context and alerts" should {
     "complete successfully" in {
-      if(!Try(System.getProperty("zap.skipTearDown").toBoolean).getOrElse(false)){
+      if (zapConfig.getBoolean("debug.skipTearDown")) {
+        logger.debug("Skipping Tear Down")
+      }
+      else {
         logger.debug(s"Removing ZAP Context (${context.name}) Policy ($policyName), and all alerts.")
         tearDown(context.name, policyName)
-      } else {
-        logger.debug("Skipping Tear Down")
       }
     }
   }
