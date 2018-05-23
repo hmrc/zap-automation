@@ -20,16 +20,20 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import org.slf4j.Logger
 
 
-object LoadConfig {
+class LoadConfig(blockConfig: Config = ConfigFactory.empty()) {
 
   val logger: Logger = ZapLogger.logger
-  val config: Config = ConfigFactory.load()
-  val extractedConfig: Config = config.getConfig("zap-automation-config")
+  def extractedConfig(): Config = {
+    val defaultConfig: Config = ConfigFactory.load().getConfig("zap-automation-config")
 
-  {
+
+     val returnConfig: Config = blockConfig
+          .withFallback(defaultConfig)
+
     val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
     logger.info(s"Below Config is used by Zap Automation Library \n" +
-      extractedConfig.root().render(renderOpts))
-  }
+      returnConfig.root().render(renderOpts))
 
+    returnConfig
+  }
 }
