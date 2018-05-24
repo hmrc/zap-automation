@@ -47,7 +47,5 @@ class ZapConfig(projectConfig: Config = ConfigFactory.empty()) {
   def desiredTechnologyNames: String = {config.getString("desiredTechnologyNames")}
   def alertsToIgnore: List[Config] = {config.getConfigList("alertsToIgnore").toList}
   def debugHealthcheck: Boolean = {config.getBoolean("debug.healthCheck")}
-  def debugPrintConfig: Boolean = {config.getBoolean("debug.printConfig")}
   def debugTearDown: Boolean = {config.getBoolean("debug.tearDown")}
-
 }
