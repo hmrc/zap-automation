@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc
+package uk.gov.hmrc.zap
 
 case class ZapAlert(other: String = "",
                     method: String = "",

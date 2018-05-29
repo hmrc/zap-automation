@@ -1,6 +1,6 @@
-@import uk.gov.hmrc.ZapAlert
+@import uk.gov.hmrc.zap.ZapAlert
 
-@(alerts: List[ZapAlert], failureThreshold: String)
+@(alerts: List[ZapAlert], failureThreshold: String, spiderScanCompleted: Boolean, activeScanCompleted: Boolean)
 
 <html>
     <head>
@@ -89,6 +89,22 @@
             </tr>
             <tr bgcolor="#e8e8e8">
                 <td><a href="#info">Informational</a></td><td id="summary-info-count" align="center">@{alerts.count {_.riskShortName() == "Info"}}</td>
+            </tr>
+        </table>
+        <div class="spacer-lg"></div>
+        <h3>Summary of Scan</h3>
+        <table width="45%" class="summary">
+            <tr bgcolor="#666666">
+                <th width="45%" height="24">Scan</th><th width="55%" align="center">Status</th>
+            </tr>
+            <tr bgcolor="#e8e8e8">
+                <td>Passive</td><td id="passive-scan" align="center">Run</td>
+            </tr>
+            <tr bgcolor="#e8e8e8">
+                <td>Spider</td><td id="spider-scan" align="center">@{if (spiderScanCompleted) {"Run"} else {"Not Run"}}</td>
+            </tr>
+            <tr bgcolor="#e8e8e8">
+                <td>Active</td><td id="active-scan" align="center">@{if (activeScanCompleted) {"Run"} else {"Not Run"}}</td>
             </tr>
         </table>
         <div class="spacer-lg"></div>
