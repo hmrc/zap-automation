@@ -16,27 +16,30 @@
 
 package uk.gov.hmrc
 
+import com.typesafe.config.ConfigFactory
 import org.mockito.Mockito
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FunSpec, Matchers}
-import uk.gov.hmrc.utils.WsClient
+import uk.gov.hmrc.utils.HttpClient
+import uk.gov.hmrc.utils.ZapConfiguration._
+import uk.gov.hmrc.zap.ZapApi._
+
+
 
 class BaseSpec extends FunSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
 
-  val wsClientMock: WsClient = mock[WsClient]
+  val wsClientMock: HttpClient = mock[HttpClient]
 
-  class StubbedZapTest extends ZapTest {
-    override lazy val theClient: WsClient = wsClientMock
-    override val zapBaseUrl: String = "http://zap.url.com"
-    override val testUrl: String = "something"
-    override val contextBaseUrl: String = "http://context.base.url.*"
-    override val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
-    override val alertsBaseUrl: String = "http://alerts.base.url"
-  }
-
-  val zapTest = new StubbedZapTest
+  httpClient = wsClientMock
 
   override protected def beforeEach(): Unit = {
     Mockito.reset(wsClientMock)
+  }
+
+  def updateTestConfigWith(config: String): Unit = {
+    zapConfig =  ConfigFactory.parseString(config).
+      withFallback(
+        ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+      )
   }
 }

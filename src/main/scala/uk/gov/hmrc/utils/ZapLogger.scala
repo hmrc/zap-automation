@@ -18,7 +18,7 @@ package uk.gov.hmrc.utils
 
 import org.slf4j.{Logger, LoggerFactory}
 
-object ZapLogger {
+trait ZapLogger {
 
   val logger: Logger = LoggerFactory.getLogger("[ZAP Logger]")
 

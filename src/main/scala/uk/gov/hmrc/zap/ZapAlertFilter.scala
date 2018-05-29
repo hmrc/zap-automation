@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc
+package uk.gov.hmrc.zap
 
 case class ZapAlertFilter(cweid: String, url: String) {
   def matches(zapAlert: ZapAlert): Boolean = {
