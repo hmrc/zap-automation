@@ -27,7 +27,7 @@ object ZapReport {
   }
 
   def writeToFile(report: String): Unit = {
-    val directory: File = new File("target/reports")
+    val directory: File = new File("target/zap-reports")
     if (!directory.exists()) {
       directory.mkdir()
     }
