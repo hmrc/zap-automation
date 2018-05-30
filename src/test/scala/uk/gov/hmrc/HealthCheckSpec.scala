@@ -16,55 +16,61 @@
 
 package uk.gov.hmrc
 
-import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
-import org.scalatest.exceptions.TestFailedException
+import uk.gov.hmrc.utils.ZapConfiguration._
+import uk.gov.hmrc.zap.ZapApi._
+import uk.gov.hmrc.zap.ZapException
 
 class HealthCheckSpec extends BaseSpec {
 
   describe("Health Check") {
 
     it("should be performed if healthCheck config is set to true") {
-      when(wsClientMock.getRequest(zapTest.testUrl)).thenReturn((200, "the-response"))
 
-      zapTest.healthCheckTestUrl()
-      verify(wsClientMock).getRequest(zapTest.testUrl)
+      updateTestConfigWith("debug.healthCheck=true")
+
+      when(wsClientMock.getRequest(testUrl)).thenReturn((200, "the-response"))
+
+      healthCheckTestUrl()
+      verify(wsClientMock).getRequest(testUrl)
     }
 
     it("should not be performed if healthCheck config is set to false") {
 
-      val zapTest = new StubbedZapTest {
-        logger.info("Overriding default healthCheck config for false")
-        override val zapConfig: Config = ConfigFactory.parseString("debug.healthCheck=false")
-      }
-      when(wsClientMock.getRequest(zapTest.testUrl)).thenReturn((200, "the-response"))
+      updateTestConfigWith("debug.healthCheck=false")
 
-      zapTest.healthCheckTestUrl()
+      when(wsClientMock.getRequest(testUrl)).thenReturn((200, "the-response"))
+
+      healthCheckTestUrl()
       Mockito.verifyZeroInteractions(wsClientMock)
     }
 
     it("should fail if healthCheck response status code did not match 2xx or 3xx") {
 
-      when(wsClientMock.getRequest(zapTest.testUrl)).thenReturn((400, "the-response"))
+      updateTestConfigWith("debug.healthCheck=true")
+
+      when(wsClientMock.getRequest(testUrl)).thenReturn((400, "the-response"))
       try {
-        zapTest.healthCheckTestUrl()
+        healthCheckTestUrl()
       }
       catch {
-        case e: TestFailedException => e.getMessage() shouldBe s"Health Check failed for test URL: ${zapTest.testUrl} with status:400"
+        case e: ZapException => e.getMessage() shouldBe s"Health Check failed for test URL: $testUrl with status:400"
       }
     }
 
     it("should not fail if healthCheck response status code 2xx") {
 
-      when(wsClientMock.getRequest(zapTest.testUrl)).thenReturn((200, "the-response"))
-      zapTest.healthCheckTestUrl()
+      updateTestConfigWith("debug.healthCheck=true")
+
+      when(wsClientMock.getRequest(testUrl)).thenReturn((200, "the-response"))
+      healthCheckTestUrl()
     }
 
     it("should not fail if healthCheck response status code 3xx") {
 
-      when(wsClientMock.getRequest(zapTest.testUrl)).thenReturn((302, "the-response"))
-      zapTest.healthCheckTestUrl()
+      when(wsClientMock.getRequest(testUrl)).thenReturn((302, "the-response"))
+      healthCheckTestUrl()
     }
   }
 }

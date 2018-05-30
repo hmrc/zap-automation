@@ -72,7 +72,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "", url = "")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: \"16\", url: \"http://beccy.com/\"}]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: "16", url: "http://beccy.com/"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
@@ -85,7 +85,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/1/here")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: \"16\", url: \"\"\"http://localhost:9999/hello/\\w{3}/here\"\"\"}]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: "16", url: "http://localhost:9999/hello/\\w{3}/here"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
@@ -98,10 +98,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "18", url = "http://localhost:9999/hello/here")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: 16, url: \"\"\"http://localhost:9999/hello/\\w{9}/here\"\"\"}," +
-        "{cweid: 17, url: \"\"\"http://localhost:9999/hello/\\w{10}/here\"\"\"}," +
-        "{cweid: 18, url: \"http://localhost:9999/hello/here\"}" +
-        "]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"},
+                              {cweid: 17, url: "http://localhost:9999/hello/\\w{10}/here"},
+                              {cweid: 18, url: "http://localhost:9999/hello/here"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
@@ -113,7 +112,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C/here")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: 16, url: \"\"\"http://localhost:9999/hello/\\w{9}/here\"\"\"}]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
@@ -126,7 +125,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: 16, url: \"\"\"http://localhost:9999/hello/\\w{9}/here\"\"\"}]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
@@ -138,7 +137,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: 16, url: \"http://localhost:9999/hello/SB363126A/here\"}]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/SB363126A/here"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
@@ -152,7 +151,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:99991/hello/SB363126A/something-else?param1=1234")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: 16, url: \"\"\"http://localhost:99991/hello/SB363126A(/optional)?/something-else\\?param1=1234\"\"\"}]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:99991/hello/SB363126A(/optional)?/something-else\\?param1=1234"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
@@ -164,7 +163,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "https://www.gstatic.com/chrome/intelligence/anything-at-all")
       )
 
-      updateTestConfigWith("alertsToIgnore=[{cweid: 16, url: \"\"\"https://www\\.gstatic\\.com/chrome/intelligence/.*\"\"\"}]")
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "https://www.gstatic.com/chrome/intelligence/.*"}]""")
 
       val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 0

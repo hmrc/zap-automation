@@ -69,26 +69,6 @@ trait ZapTest extends WordSpec with BeforeAndAfterAll{
     writeToFile(generateHtmlReport(relevantAlerts.sortBy{ _.severityScore() }, failureThreshold, spiderScanCompleted, activeScanCompleted))
   }
 
-  private  def healthCheckTestUrl(): Unit = {
-
-    if (debugHealthCheck) {
-      logger.info(s"Checking if test Url: $testUrl is available to test.")
-      val successStatusRegex = "(2..|3..)"
-      val (status, response) = try {
-        httpClient.getRequest({testUrl})
-      }
-      catch {
-        case e: Throwable => throw ZapException(s"Health check failed for test URL: $testUrl with exception:${e.getMessage}")
-      }
-
-      if (!status.toString.matches(successStatusRegex))
-        throw ZapException(s"Health Check failed for test URL: $testUrl with status:$status")
-    }
-    else {
-      logger.info("Health Checking Test Url is disabled. This may result in incorrect test result.")
-    }
-  }
-
   private def setupPolicy(): Unit = {
     policyName = createPolicy()
     setUpPolicy(policyName)
