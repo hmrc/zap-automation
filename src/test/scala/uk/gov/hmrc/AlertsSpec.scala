@@ -18,6 +18,8 @@ package uk.gov.hmrc
 
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
+import uk.gov.hmrc.zap.ZapAlert
+import uk.gov.hmrc.zap.ZapApi._
 
 class AlertsSpec extends BaseSpec {
 
@@ -30,11 +32,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(evidence = "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val ignoreOptimizelyAlerts: Boolean = true
-      }
+      updateTestConfigWith("ignoreOptimizelyAlerts=true")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
 
     }
@@ -46,11 +46,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val ignoreOptimizelyAlerts: Boolean = false
-      }
+      updateTestConfigWith("ignoreOptimizelyAlerts=false")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 3
     }
 
@@ -61,11 +59,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val ignoreOptimizelyAlerts: Boolean = true
-      }
+      updateTestConfigWith("ignoreOptimizelyAlerts=true")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 3
     }
 
@@ -76,12 +72,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "", url = "")
       )
 
-      val zapTest = new StubbedZapTest {
-        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "http://beccy.com/")
-        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: "16", url: "http://beccy.com/"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
     }
 
@@ -92,12 +85,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/1/here")
       )
 
-      val zapTest = new StubbedZapTest {
-        val alertToBeIgnored: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = """http://localhost:9999/hello/\w{3}/here""")
-        override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored)
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: "16", url: "http://localhost:9999/hello/\\w{3}/here"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
     }
 
@@ -108,15 +98,11 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "18", url = "http://localhost:9999/hello/here")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List[ZapAlertFilter](
-          ZapAlertFilter(cweid = "16", url = """http://localhost:9999/hello/\w{9}/here"""),
-          ZapAlertFilter(cweid = "17", url = """http://localhost:9999/hello/\w{10}/here"""),
-          ZapAlertFilter(cweid = "18", url = "http://localhost:9999/hello/here")
-        )
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"},
+                              {cweid: 17, url: "http://localhost:9999/hello/\\w{10}/here"},
+                              {cweid: 18, url: "http://localhost:9999/hello/here"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
     }
 
@@ -126,12 +112,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C/here")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] =
-          List(ZapAlertFilter(cweid = "16", url = """http://localhost:9999/hello/\w{9}/here"""))
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
     }
 
@@ -142,11 +125,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid = "16", url = """http://localhost:9999/hello/\w{9}/here"""))
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
     }
 
@@ -156,11 +137,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here"))
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/SB363126A/here"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
     }
 
@@ -172,11 +151,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:99991/hello/SB363126A/something-else?param1=1234")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid = "16", url = """http://localhost:99991/hello/SB363126A(/optional)?/something-else\?param1=1234"""))
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "http://localhost:99991/hello/SB363126A(/optional)?/something-else\\?param1=1234"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
     }
 
@@ -186,11 +163,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "https://www.gstatic.com/chrome/intelligence/anything-at-all")
       )
 
-      val zapTest = new StubbedZapTest {
-        override val alertsToIgnore: List[ZapAlertFilter] = List(ZapAlertFilter(cweid = "16", url = """https://www\.gstatic\.com/chrome/intelligence/.*"""))
-      }
+      updateTestConfigWith("""alertsToIgnore=[{cweid: 16, url: "https://www.gstatic.com/chrome/intelligence/.*"}]""")
 
-      val filteredAlerts = zapTest.filterAlerts(alerts)
+      val filteredAlerts = filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
     }
   }
@@ -225,7 +200,6 @@ class AlertsSpec extends BaseSpec {
                                                                                       ]
                                                                                       }"""))
 
-      val parsedAlerts = zapTest.parsedAlerts
       val alert1: ZapAlert = ZapAlert("Other text", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
       parsedAlerts should contain theSameElementsAs List(alert1)
     }

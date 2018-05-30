@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import org.slf4j.Logger
-
-
-object LoadConfig {
-
-  val logger: Logger = ZapLogger.logger
-  val config: Config = ConfigFactory.load()
-  val extractedConfig: Config = config.getConfig("zap-automation-config")
-
-  {
-    val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
-    logger.info(s"Below Config is used by Zap Automation Library \n" +
-      extractedConfig.root().render(renderOpts))
+case class ZapAlertFilter(cweid: String, url: String) {
+  def matches(zapAlert: ZapAlert): Boolean = {
+    zapAlert.url.matches(url) && zapAlert.cweid.equals(cweid)
   }
-
 }

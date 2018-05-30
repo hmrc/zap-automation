@@ -23,7 +23,16 @@ import play.api.libs.ws.ahc.AhcWSClient
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
-class WsClient {
+
+
+trait HttpClient {
+
+  def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String)
+  def getRequest(url: String, params: (String, String)*): (Int, String)
+
+}
+
+object WsClient extends HttpClient{
 
   def asyncClient: AhcWSClient = {
     implicit val system: ActorSystem = ActorSystem()
@@ -50,5 +59,4 @@ class WsClient {
     (response.status, response.body)
 
   }
-
 }

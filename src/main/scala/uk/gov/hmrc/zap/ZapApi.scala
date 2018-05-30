@@ -14,99 +14,40 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc
+package uk.gov.hmrc.zap
 
-import java.io.{BufferedWriter, File, FileWriter}
 import java.util.UUID
 
 import com.typesafe.config.Config
-import org.scalatest.{BeforeAndAfterAll, WordSpec}
-import org.slf4j.Logger
-import play.api.libs.json._
-import uk.gov.hmrc.utils.{LoadConfig, TestHelper, WsClient, ZapLogger}
+import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.utils.ZapConfiguration._
+import uk.gov.hmrc.utils._
 
-trait ZapTest extends WordSpec with BeforeAndAfterAll{
+import scala.collection.mutable.ListBuffer
 
-  val logger: Logger = ZapLogger.logger
-  val zapConfig: Config = LoadConfig.extractedConfig
-
-  /**
-    * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
-    * you can filter them out by adding to this list, using the cweid and the url that the alert was found on.
-    * The CWE ID is a Common Weakness Enumeration (http://cwe.mitre.org/data/index.html), you can
-    * find this by looking at the alert output from your tests.
-    */
-  val alertsToIgnore: List[ZapAlertFilter] = List.empty
-
-  /**
-    * Required field. It will rarely need to be changed. We've included it as an overridable
-    * field for flexibility and just in case.
-    */
-  val zapBaseUrl: String
-
-  /**
-    * Required field. It needs to be the URL of the start page of your application (not
-    * just localhost:port).
-    */
-  val testUrl: String
-  lazy val theClient = new WsClient()
-
-  /**
-    * Not a required field. This url is added as the base url to your context.
-    * A context is a construct in Zap that limits the scope of any attacks run to a
-    * particular domain (this doesn't mean that Zap won't find alerts on other services during the
-    * browser test run).
-    * This would usually be the base url of your service - eg http://localhost:xxxx.*
-    */
-  val contextBaseUrl: String = ".*"
-
-  /**
-    * Not a required field. This value, if set to true, will ignore all alerts from optimizely.
-    */
-  val ignoreOptimizelyAlerts: Boolean = false
-
-  /**
-    * Not a required field. This is the url that the zap-automation library
-    * will use to filter out the alerts that are shown to you. Note that while Zap is doing
-    * testing, it is likely to find alerts from other services that you don't own - for example
-    * from logging in, therefore we recommend that you set this to be the base url for the
-    * service you are interested in.
-    */
-  val alertsBaseUrl: String = ""
-  var policyName: String = ""
-  var context: Context = _
-
-  /**
-    * Not a required field. We recommend you don't change this field, as we've made basic choices
-    * for the platform. We made it overridable just in case your service differs from the
-    * standards of the Platform.
-    *
-    * The technologies that you put here will limit the amount of checks that ZAP will do to
-    * just the technologies that are relevant. The default technologies are set to
-    * "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git".
-    */
-  val desiredTechnologyNames: String = "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git"
-
-  /**
-    * Not a required field. You may set this if you have any routes that are part of your
-    * application, but you do not want tested. For example, if you had any test-only routes, you
-    * could force Zap not to test them by adding them in here as a regex.
-    */
-  val routeToBeIgnoredFromContext: String = ""
-
-  /**
-    * Not a required field. You should set this to be true if you are testing an API.
-    * By default this assumes you are testing a UI and therefore is defaulted to be false.
-    */
-  val testingAnApi: Boolean = false
+object ZapApi {
 
   implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
 
+  var httpClient: HttpClient = WsClient
+  var spiderScanCompleted : Boolean = false
+  var activeScanCompleted : Boolean = false
+
+  def alertsToIgnore():List[ZapAlertFilter] = {
+    val listOfAlerts: List[Config] = ZapConfiguration.alertsToIgnore
+    val listBuffer: ListBuffer[ZapAlertFilter] = new ListBuffer[ZapAlertFilter]
+
+    listOfAlerts.foreach { af: Config =>
+      listBuffer.append(ZapAlertFilter(af.getString("cweid"), af.getString("url")))
+    }
+    listBuffer.toList
+  }
+
   def callZapApi(queryPath: String, params: (String, String)*): String = {
-    val (status, response) = theClient.get(zapBaseUrl, queryPath, params: _*)
+    val (status, response) = httpClient.get(zapBaseUrl, queryPath, params: _*)
 
     if (status != 200) {
-      fail(s"Expected response code is 200, received:$status")
+      throw ZapException(s"Expected response code is 200, received:$status")
     }
     response
   }
@@ -120,6 +61,7 @@ trait ZapTest extends WordSpec with BeforeAndAfterAll{
   def createPolicy(): String = {
     val policyName = UUID.randomUUID.toString
     callZapApi("/json/ascan/action/addScanPolicy", "scanPolicyName" -> policyName)
+    logger.info(s"Creating policy: $policyName")
     policyName
   }
 
@@ -143,6 +85,8 @@ trait ZapTest extends WordSpec with BeforeAndAfterAll{
     val response: String = callZapApi("/json/context/action/newContext", "contextName" -> contextName)
     val jsonResponse = Json.parse(response)
     val contextId = (jsonResponse \ "contextId").as[String]
+    logger.info(s"Context Name: $contextName")
+    logger.info(s"Context Id: $contextId")
 
     Context(contextName, contextId)
   }
@@ -166,44 +110,27 @@ trait ZapTest extends WordSpec with BeforeAndAfterAll{
     callZapApi("/json/core/action/deleteAllAlerts")
   }
 
+
   def runAndCheckStatusOfSpider(contextName: String): Unit = {
     callZapApi("/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
     TestHelper.waitForCondition(hasCallCompleted("/json/spider/view/status"), "Spider Timed Out", timeoutInSeconds = 600)
+    spiderScanCompleted = true
   }
 
   def runAndCheckStatusOfActiveScan(contextId: String, policyName: String): Unit = {
-    val isActiveScanRequired = zapConfig.getBoolean("activeScan")
-
-    if (isActiveScanRequired) {
-
-      logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Triggering Active Scan.")
-
+    if (activeScan) {
+      logger.info(s"Triggering Active Scan.")
       callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
       TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
+      activeScanCompleted = true
     }
     else
-      logger.info(s"Active Scan Config: is set to: $isActiveScanRequired. Active Scan is NOT triggered.")
-  }
-
-  def writeToFile(report: String): Unit = {
-    val directory: File = new File("target/reports")
-    if(!directory.exists()) { directory.mkdir() }
-    val file: File = new File(s"${directory.getAbsolutePath}/ZapReport.html")
-    val writer = new BufferedWriter(new FileWriter(file))
-    writer.write(report)
-    writer.close()
-
-    logger.info(s"HTML Report generated: file://${file.getAbsolutePath}")
-  }
-
-  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String): String = {
-    report.html.index(relevantAlerts, failureThreshold).toString()
+      logger.info(s"Skipping Active Scan")
   }
 
   def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
-
     val relevantAlerts = allAlerts.filterNot{zapAlert =>
-      alertsToIgnore.exists(f => f.matches(zapAlert))
+      alertsToIgnore().exists(f => f.matches(zapAlert))
     }
 
     if(ignoreOptimizelyAlerts)
@@ -214,7 +141,7 @@ trait ZapTest extends WordSpec with BeforeAndAfterAll{
 
   def testSucceeded(relevantAlerts: List[ZapAlert]): Boolean = {
 
-    val failingAlerts = zapConfig.getString("failureThreshold") match {
+    val failingAlerts = failureThreshold match {
       case "High" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low" || zapAlert.risk == "Medium")
       case "Medium" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low")
       case "Low" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
@@ -232,67 +159,26 @@ trait ZapTest extends WordSpec with BeforeAndAfterAll{
 
   def healthCheckTestUrl(): Unit = {
 
-    if (zapConfig.getBoolean("debug.healthCheck")) {
+    if (debugHealthCheck) {
       logger.info(s"Checking if test Url: $testUrl is available to test.")
       val successStatusRegex = "(2..|3..)"
       val (status, response) = try {
-        theClient.getRequest(testUrl)
+        httpClient.getRequest({testUrl})
       }
       catch {
-        case e: Throwable => fail(s"Health check failed for test URL: $testUrl with exception:${e.getMessage}")
+        case e: Throwable => throw ZapException(s"Health check failed for test URL: $testUrl with exception:${e.getMessage}")
       }
 
       if (!status.toString.matches(successStatusRegex))
-        fail(s"Health Check failed for test URL: $testUrl with status:$status")
+        throw ZapException(s"Health Check failed for test URL: $testUrl with status:$status")
     }
     else {
       logger.info("Health Checking Test Url is disabled. This may result in incorrect test result.")
     }
   }
 
-  override def beforeAll(): Unit = {
-    healthCheckTestUrl()
-  }
-
-  "Setting up the policy and context" should {
-    "complete successfully" in {
-      policyName = createPolicy()
-      logger.info(s"Creating policy: $policyName")
-      setUpPolicy(policyName)
-      context = createContext()
-      logger.info(s"Creating context: $context")
-      setUpContext(context.name)
-    }
-  }
-
-  "Kicking off the scans" should {
-    "complete successfully" in {
-      runAndCheckStatusOfSpider(context.name)
-      runAndCheckStatusOfActiveScan(context.id, policyName)
-    }
-  }
-
-  "Inspecting the alerts" should {
-    "not find any unknown alerts" in {
-      val relevantAlerts = filterAlerts(parsedAlerts)
-      writeToFile(generateHtmlReport(relevantAlerts.sortBy{ _.severityScore() }, zapConfig.getString("failureThreshold")))
-      withClue ("Zap found some new alerts - see above!") {
-        assert(testSucceeded(relevantAlerts))
-      }
-    }
-  }
-
-  "Tearing down the policy, context and alerts" should {
-    "complete successfully" in {
-      if (zapConfig.getBoolean("debug.skipTearDown")) {
-        logger.debug("Skipping Tear Down")
-      }
-      else {
-        logger.debug(s"Removing ZAP Context (${context.name}) Policy ($policyName), and all alerts.")
-        tearDown(context.name, policyName)
-      }
-    }
-  }
 }
 
 case class Context(name: String, id: String)
+
+case class ZapException(s: String) extends Exception(s)
