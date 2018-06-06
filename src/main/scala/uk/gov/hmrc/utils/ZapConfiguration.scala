@@ -23,7 +23,7 @@ import scala.collection.JavaConversions._
 
 object ZapConfiguration extends ZapLogger{
 
-  var zapConfig: Config = ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config")
+  var zapConfig: Config = ConfigFactory.load().getConfig("zap-automation-config")
 
   /*
    * Call to inject project specific configuration
