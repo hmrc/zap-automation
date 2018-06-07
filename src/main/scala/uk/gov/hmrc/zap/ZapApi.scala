@@ -160,21 +160,27 @@ object ZapApi {
   def healthCheckTestUrl(): Unit = {
 
     if (debugHealthCheck) {
-      logger.info(s"Checking if test Url: $testUrl is available to test.")
+      logger.info(s"Performing health check for the test URL with: $healthCheckUrl")
       val successStatusRegex = "(2..|3..)"
       val (status, response) = try {
-        httpClient.getRequest({testUrl})
+        httpClient.getRequest(healthCheckUrl)
       }
       catch {
-        case e: Throwable => throw ZapException(s"Health check failed for test URL: $testUrl with exception:${e.getMessage}")
+        case e: Throwable => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with exception:${e.getMessage}")
       }
 
       if (!status.toString.matches(successStatusRegex))
-        throw ZapException(s"Health Check failed for test URL: $testUrl with status:$status")
+        throw ZapException(s"Health Check failed for test URL: $healthCheckUrl with status:$status")
     }
     else {
       logger.info("Health Checking Test Url is disabled. This may result in incorrect test result.")
     }
+  }
+
+  lazy val healthCheckUrl: String = {
+    val localHostRegex = "http:\\/\\/localhost:\\d+".r
+    val host = localHostRegex.findFirstIn(testUrl).get
+    s"$host/ping/ping"
   }
 
 }

@@ -30,17 +30,17 @@ class HealthCheckSpec extends BaseSpec {
 
       updateTestConfigWith("debug.healthCheck=true")
 
-      when(wsClientMock.getRequest(testUrl)).thenReturn((200, "the-response"))
+      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((200, "the-response"))
 
       healthCheckTestUrl()
-      verify(wsClientMock).getRequest(testUrl)
+      verify(wsClientMock).getRequest(healthCheckUrl)
     }
 
     it("should not be performed if healthCheck config is set to false") {
 
       updateTestConfigWith("debug.healthCheck=false")
 
-      when(wsClientMock.getRequest(testUrl)).thenReturn((200, "the-response"))
+      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((200, "the-response"))
 
       healthCheckTestUrl()
       Mockito.verifyZeroInteractions(wsClientMock)
@@ -50,12 +50,12 @@ class HealthCheckSpec extends BaseSpec {
 
       updateTestConfigWith("debug.healthCheck=true")
 
-      when(wsClientMock.getRequest(testUrl)).thenReturn((400, "the-response"))
+      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((400, "the-response"))
       try {
         healthCheckTestUrl()
       }
       catch {
-        case e: ZapException => e.getMessage() shouldBe s"Health Check failed for test URL: $testUrl with status:400"
+        case e: ZapException => e.getMessage() shouldBe s"Health Check failed for test URL: $healthCheckUrl with status:400"
       }
     }
 
@@ -63,13 +63,13 @@ class HealthCheckSpec extends BaseSpec {
 
       updateTestConfigWith("debug.healthCheck=true")
 
-      when(wsClientMock.getRequest(testUrl)).thenReturn((200, "the-response"))
+      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((200, "the-response"))
       healthCheckTestUrl()
     }
 
     it("should not fail if healthCheck response status code 3xx") {
 
-      when(wsClientMock.getRequest(testUrl)).thenReturn((302, "the-response"))
+      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((302, "the-response"))
       healthCheckTestUrl()
     }
   }
