@@ -39,15 +39,14 @@ object HmrcBuild extends Build {
 }
 
 private object AppDependencies {
-
+  import play.sbt.PlayImport._
   val jerseyVersion = "1.19.3"
   val ScalatraVersion = "2.5.4"
 
   import play.core.PlayVersion
 
   val compile = Seq(
-    "com.typesafe.play" %% "play" % PlayVersion.current,
-    "com.typesafe.play" %% "play-ws" % PlayVersion.current,
+    ws,
     "org.scalatra" %% "scalatra" % ScalatraVersion,
     "org.slf4j" % "slf4j-api" % "1.7.25",
     "org.slf4j" % "slf4j-simple" % "1.7.25",

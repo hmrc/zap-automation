@@ -16,38 +16,26 @@
 
 package uk.gov.hmrc.zap
 
-import org.scalatest.{BeforeAndAfterAll, WordSpec}
-import uk.gov.hmrc.utils.ZapConfiguration._
-import uk.gov.hmrc.zap.ZapApi._
+import org.scalatest.{BeforeAndAfterAll, Suite}
+import uk.gov.hmrc.utils.ZapConfiguration
 import uk.gov.hmrc.zap.ZapReport._
+import uk.gov.hmrc.utils.ZapLogger._
 
+trait ZapTest extends BeforeAndAfterAll {
 
-trait ZapTest extends WordSpec with BeforeAndAfterAll{
+  this: Suite =>
 
   var context: Context = _
   var policyName: String = ""
 
+  def zapConfiguration: ZapConfiguration
+
+  lazy val zapApi = new ZapApi(zapConfiguration)
+
   override def beforeAll(): Unit = {
-    printConfig()
-    healthCheckTestUrl()
+    zapApi.healthCheckTestUrl()
     setupPolicy()
     setupContext()
-  }
-
-  "Kicking off the scans" should {
-    "complete successfully" in {
-      runAndCheckStatusOfSpider(context.name)
-      runAndCheckStatusOfActiveScan(context.id, policyName)
-    }
-  }
-
-  "Inspecting the alerts" should {
-    "not find any unknown alerts" in {
-      val relevantAlerts = filterAlerts(parsedAlerts)
-      if (!testSucceeded(relevantAlerts)) {
-        throw ZapException(s"Zap found some new alerts - see link to HMTL report above!")
-      }
-    }
   }
 
   override def afterAll(): Unit = {
@@ -56,27 +44,28 @@ trait ZapTest extends WordSpec with BeforeAndAfterAll{
   }
 
   private def tearDownZap(): Unit = {
-    if (debugTearDown) {
+    if (zapConfiguration.debugTearDown) {
       logger.debug(s"Removing ZAP Context (${context.name}) Policy ($policyName), and all alerts.")
-      tearDown(context.name, policyName)
+      zapApi.tearDown(context.name, policyName)
     } else {
       logger.debug("Skipping Tear Down")
     }
   }
 
   private def createTestReport(): Unit = {
-    val relevantAlerts = filterAlerts(parsedAlerts)
-    writeToFile(generateHtmlReport(relevantAlerts.sortBy{ _.severityScore() }, failureThreshold, spiderScanCompleted, activeScanCompleted))
+    val relevantAlerts = zapApi.filterAlerts(zapApi.parsedAlerts)
+    writeToFile(generateHtmlReport(relevantAlerts.sortBy{ _.severityScore() }, zapConfiguration.failureThreshold,
+      zapApi.hasCallCompleted("/json/spider/view/status"), zapApi.hasCallCompleted("/json/ascan/view/status")))
   }
 
   private def setupPolicy(): Unit = {
-    policyName = createPolicy()
-    setUpPolicy(policyName)
+    policyName = zapApi.createPolicy()
+    zapApi.setUpPolicy(policyName)
   }
 
   private def setupContext(): Unit = {
-    context = createContext()
-    setUpContext(context.name)
+    context = zapApi.createContext()
+    zapApi.setUpContext(context.name)
   }
 
 }

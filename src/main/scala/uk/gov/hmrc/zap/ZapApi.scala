@@ -19,22 +19,25 @@ package uk.gov.hmrc.zap
 import java.util.UUID
 
 import com.typesafe.config.Config
+import org.scalatest.concurrent.Eventually
+import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.libs.json.{Json, Reads}
-import uk.gov.hmrc.utils.ZapConfiguration._
+import uk.gov.hmrc.utils.ZapLogger._
 import uk.gov.hmrc.utils._
 
 import scala.collection.mutable.ListBuffer
 
-object ZapApi {
+class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) extends Eventually {
+
+  implicit override val patienceConfig =
+    PatienceConfig(timeout = scaled(Span(2, Seconds)), interval = scaled(Span(5, Millis)))
+
+  import zapConfiguration._
 
   implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
 
-  var httpClient: HttpClient = WsClient
-  var spiderScanCompleted : Boolean = false
-  var activeScanCompleted : Boolean = false
-
-  def alertsToIgnore():List[ZapAlertFilter] = {
-    val listOfAlerts: List[Config] = ZapConfiguration.alertsToIgnore
+  def alertsToIgnore(): List[ZapAlertFilter] = {
+    val listOfAlerts: List[Config] = zapConfiguration.alertsToIgnore
     val listBuffer: ListBuffer[ZapAlertFilter] = new ListBuffer[ZapAlertFilter]
 
     listOfAlerts.foreach { af: Config =>
@@ -114,26 +117,30 @@ object ZapApi {
   def runAndCheckStatusOfSpider(contextName: String): Unit = {
     callZapApi("/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
     TestHelper.waitForCondition(hasCallCompleted("/json/spider/view/status"), "Spider Timed Out", timeoutInSeconds = 600)
-    spiderScanCompleted = true
   }
 
   def runAndCheckStatusOfActiveScan(contextId: String, policyName: String): Unit = {
     if (activeScan) {
       logger.info(s"Triggering Active Scan.")
       callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
+
+      eventually {
+        hasCallCompleted("/json/ascan/view/status")
+        FixedDelay(100)
+      }
+
       TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
-      activeScanCompleted = true
     }
     else
       logger.info(s"Skipping Active Scan")
   }
 
   def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
-    val relevantAlerts = allAlerts.filterNot{zapAlert =>
+    val relevantAlerts = allAlerts.filterNot { zapAlert =>
       alertsToIgnore().exists(f => f.matches(zapAlert))
     }
 
-    if(ignoreOptimizelyAlerts)
+    if (ignoreOptimizelyAlerts)
       relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
     else
       relevantAlerts

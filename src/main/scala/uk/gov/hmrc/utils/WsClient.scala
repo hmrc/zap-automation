@@ -20,19 +20,20 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.AhcWSClient
-import scala.concurrent.duration._
-import scala.concurrent.Await
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 
 trait HttpClient {
 
   def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String)
+
   def getRequest(url: String, params: (String, String)*): (Int, String)
 
 }
 
-object WsClient extends HttpClient{
+object WsClient extends HttpClient {
 
   def asyncClient: AhcWSClient = {
     implicit val system: ActorSystem = ActorSystem()

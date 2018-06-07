@@ -16,30 +16,45 @@
 
 package uk.gov.hmrc
 
+import com.typesafe.config.ConfigFactory
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
-import uk.gov.hmrc.utils.ZapConfiguration._
-import uk.gov.hmrc.zap.{Context, ZapException}
-import uk.gov.hmrc.zap.ZapApi._
+import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
+import uk.gov.hmrc.zap.{Context, ZapAlert, ZapApi, ZapException}
 
 class ZapTestSpec extends BaseSpec {
 
+  trait TestSetup {
+    val httpClient: HttpClient = mock[HttpClient]
+
+    implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
+    val config = ConfigFactory.parseString("testingAnApi=false").
+      withFallback(
+        ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+      )
+
+    val zapConfiguration = new ZapConfiguration(config)
+    val zapApi = new ZapApi(zapConfiguration)
+
+  }
+
   private val jsonStatus = """{"status": "100"}"""
 
-  describe("callZapApiTo") {
+  "callZapApiTo" {
 
-    it("should return a response") {
-      when(wsClientMock.get(zapBaseUrl, "/someUrl")).thenReturn((200, "the-response"))
+    "should return a response" in new TestSetup {
+      when(httpClient.get(zapConfiguration.zapBaseUrl, "/someUrl")).thenReturn((200, "the-response"))
 
-      val response = callZapApi("/someUrl")
+      val response: String = zapApi.callZapApi("/someUrl")
       response shouldBe "the-response"
     }
 
-    it("should fail the test when the status code is not a 200") {
-      when(wsClientMock.get(zapBaseUrl, "/someInvalidUrl")).thenReturn((400, "the-response"))
+    "should fail the test when the status code is not a 200" in new TestSetup {
+      when(httpClient.get(zapConfiguration.zapBaseUrl, "/someInvalidUrl")).thenReturn((400, "the-response"))
       try {
-        callZapApi("/someInvalidUrl")
+        zapApi.callZapApi("/someInvalidUrl")
       }
       catch {
         case e: ZapException => e.getMessage shouldBe "Expected response code is 200, received:400"
@@ -47,141 +62,139 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  describe("hasCallCompleted") {
+  "hasCallCompleted" {
 
-    it("should return true if status is 200") {
-      when(wsClientMock get(any(), any(), any())).thenReturn((200, jsonStatus))
-      val answer = hasCallCompleted("/someUrl")
+    "should return true if status is 200" in new TestSetup {
+      when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
+      val answer = zapApi.hasCallCompleted("/someUrl")
       answer shouldBe true
     }
 
-    it("should return false if status is not 200") {
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, "{\n\"status\": \"99\"\n}"))
-      val answer = hasCallCompleted("/someUrl")
+    "should return false if status is not 200" in new TestSetup {
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "{\n\"status\": \"99\"\n}"))
+      val answer = zapApi.hasCallCompleted("/someUrl")
       answer shouldBe false
     }
   }
 
-  describe("createContext") {
+  "createContext" {
 
-    it("should return the context ID") {
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, "{\n\"contextId\": \"2\"\n}"))
+    "should return the context ID" in new TestSetup {
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "{\n\"contextId\": \"2\"\n}"))
 
-      val context: Context = createContext()
+      val context: Context = zapApi.createContext()
       context.id shouldBe "2"
     }
   }
 
-  describe("setUpContext") {
+  "setUpContext" {
 
-    it("should call the Zap API to set up the context") {
+    "should call the Zap API to set up the context" in new TestSetup {
       val context = "context1"
+      import zapConfiguration._
 
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, "the-response"))
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      setUpContext(context)
-      verify(wsClientMock).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> context, "regex" -> contextBaseUrl)
-      verify(wsClientMock).get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> context)
-      verify(wsClientMock).get(zapBaseUrl, "/json/context/action/includeContextTechnologies", "contextName" -> context, "technologyNames" -> desiredTechnologyNames)
+      zapApi.setUpContext(context)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> context, "regex" -> contextBaseUrl)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> context)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeContextTechnologies", "contextName" -> context, "technologyNames" -> desiredTechnologyNames)
     }
   }
 
-  describe("createPolicy") {
+  "createPolicy" {
 
-    it("should call the Zap API to create the policy") {
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, "the-response"))
+    "should call the Zap API to create the policy" in new TestSetup {
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      val policyName = createPolicy()
+      val policyName = zapApi.createPolicy()
 
-      verify(wsClientMock).get(zapBaseUrl, "/json/ascan/action/addScanPolicy", "scanPolicyName" -> policyName)
+      verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/ascan/action/addScanPolicy", "scanPolicyName" -> policyName)
       policyName should not be null
       policyName should not be empty
     }
   }
 
-  describe("setUpPolicy") {
+  "setUpPolicy" {
 
-    it("should call the Zap API to set up the policy with scanners meant for UI testing") {
+    "should call the Zap API to set up the policy with scanners meant for UI testing" in new TestSetup {
 
       updateTestConfigWith("testingAnApi=false")
 
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, "the-response"))
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      setUpPolicy("policyName")
-      verify(wsClientMock).get(eqTo(zapBaseUrl), eqTo("/json/ascan/action/disableScanners"), any())
+      zapApi.setUpPolicy("policyName")
+      verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/disableScanners"), any())
 
     }
 
-    it("should call the Zap API to set up the policy with scanners meant for API testing") {
+    "should call the Zap API to set up the policy with scanners meant for API testing" in new TestSetup {
 
       updateTestConfigWith("testingAnApi=true")
 
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, "the-response"))
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      setUpPolicy("policyName")
-      verify(wsClientMock).get(eqTo(zapBaseUrl), eqTo("/json/ascan/action/disableAllScanners"), any())
-      verify(wsClientMock).get(eqTo(zapBaseUrl), eqTo("/json/ascan/action/enableScanners"), any())
+      zapApi.setUpPolicy("policyName")
+      verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/disableAllScanners"), any())
+      verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/enableScanners"), any())
     }
   }
 
-  describe("runAndCheckStatusOfSpider") {
+  "runAndCheckStatusOfSpider" {
 
-    it("should call Zap API to run the spider scan") {
+    "should call Zap API to run the spider scan" in new TestSetup {
       val contextName = "context1"
+      import zapConfiguration._
 
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
-      runAndCheckStatusOfSpider(contextName)
-      verify(wsClientMock).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
-      verify(wsClientMock).get(zapBaseUrl, "/json/spider/view/status")
-      withClue("SpiderScanCompleted status is incorrect:") {
-        spiderScanCompleted.shouldBe(true)
-      }
+      zapApi.runAndCheckStatusOfSpider(contextName)
+      verify(httpClient).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
+      verify(httpClient).get(zapBaseUrl, "/json/spider/view/status")
     }
   }
 
-  describe("runAndCheckStatusOfActiveScan") {
+  "runAndCheckStatusOfActiveScan" {
 
-    it("should call Zap API to run the active scan only if activeScan config is set to true") {
+    "should call Zap API to run the active scan only if activeScan config is set to true" in new TestSetup {
 
       updateTestConfigWith("activeScan=true")
 
       val contextId = ""
       val policyName = ""
+      import zapConfiguration._
 
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
-      runAndCheckStatusOfActiveScan(contextId, policyName)
-      verify(wsClientMock).get(zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
-      withClue("ActiveScanCompleted status is incorrect:") {
-        activeScanCompleted.shouldBe(true)
-      }
+      zapApi.runAndCheckStatusOfActiveScan(contextId, policyName)
+      verify(httpClient).get(zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
     }
 
-    it("should not call Zap API to run the active scan if activeScan config is set to false") {
+    "should not call Zap API to run the active scan if activeScan config is set to false" in new TestSetup {
       val contextId = ""
       val policyName = ""
       updateTestConfigWith("activeScan=false")
 
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
-      runAndCheckStatusOfActiveScan(contextId, policyName)
-      Mockito.verifyZeroInteractions(wsClientMock)
+      zapApi.runAndCheckStatusOfActiveScan(contextId, policyName)
+      Mockito.verifyZeroInteractions(httpClient)
     }
   }
 
-  describe("tearDown") {
+  "tearDown" {
 
-    it("should remove context, policy and alerts") {
+    "should remove context, policy and alerts" in new TestSetup {
       val contextName = "context-name"
       val policyName = "policy-name"
+      import zapConfiguration._
 
-      when(wsClientMock.get(any(), any(), any())).thenReturn((200, "the-response"))
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      tearDown(contextName, policyName)
-      verify(wsClientMock).get(zapBaseUrl, "/json/context/action/removeContext", "contextName" -> contextName)
-      verify(wsClientMock).get(zapBaseUrl, "/json/ascan/action/removeScanPolicy", "scanPolicyName" -> policyName)
-      verify(wsClientMock).get(zapBaseUrl, "/json/core/action/deleteAllAlerts")
+      zapApi.tearDown(contextName, policyName)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/removeContext", "contextName" -> contextName)
+      verify(httpClient).get(zapBaseUrl, "/json/ascan/action/removeScanPolicy", "scanPolicyName" -> policyName)
+      verify(httpClient).get(zapBaseUrl, "/json/core/action/deleteAllAlerts")
 
     }
   }

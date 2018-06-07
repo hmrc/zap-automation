@@ -17,7 +17,6 @@
 package uk.gov.hmrc
 
 import uk.gov.hmrc.zap.ZapAlert
-import uk.gov.hmrc.zap.ZapApi._
 
 class FailureThresholdSpec extends BaseSpec {
 

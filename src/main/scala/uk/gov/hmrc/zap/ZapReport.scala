@@ -18,7 +18,7 @@ package uk.gov.hmrc.zap
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import uk.gov.hmrc.utils.ZapConfiguration.logger
+import uk.gov.hmrc.utils.ZapLogger._
 
 object ZapReport {
 

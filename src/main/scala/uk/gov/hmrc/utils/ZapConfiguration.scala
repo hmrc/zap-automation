@@ -17,27 +17,18 @@
 package uk.gov.hmrc.utils
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import uk.gov.hmrc.utils.ZapLogger._
 
 import scala.collection.JavaConversions._
 
+class ZapConfiguration(userConfig: Config) {
 
-object ZapConfiguration extends ZapLogger{
+  lazy val zapConfig = userConfig.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
 
-  var zapConfig: Config = ConfigFactory.load().getConfig("zap-automation-config")
-
-  /*
-   * Call to inject project specific configuration
-   */
-  def withConfig(config: Config): Unit = {
-    zapConfig = config.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
-  }
-
-  def printConfig(): Unit = {
-    if (zapConfig.getBoolean("debug.printConfig")) {
-      val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
-      logger.info(s"Below Config is used by Zap Automation Library \n" +
-        zapConfig.root().render(renderOpts))
-    }
+  if (zapConfig.getBoolean("debug.printConfig")) {
+    val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
+    logger.info(s"Below Config is used by Zap Automation Library \n" +
+      zapConfig.root().render(renderOpts))
   }
 
   def activeScan: Boolean = zapConfig.getBoolean("activeScan")

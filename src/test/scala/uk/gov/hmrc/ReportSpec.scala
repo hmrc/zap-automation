@@ -18,8 +18,9 @@ package uk.gov.hmrc
 
 import com.typesafe.config.ConfigFactory
 import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
 import uk.gov.hmrc.utils.ZapConfiguration.zapConfig
-import uk.gov.hmrc.zap.ZapAlert
+import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
 import uk.gov.hmrc.zap.ZapApi._
 import uk.gov.hmrc.zap.ZapReport._
 
@@ -27,29 +28,30 @@ import scala.xml.{Elem, Node, NodeSeq, XML}
 
 class ReportSpec extends BaseSpec {
 
-  def defaultFixture =
-    new {
-      implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
-      val alerts: List[ZapAlert] = Json.parse(alertJson).as[List[ZapAlert]]
-      val threshold = "AUniqueThreshold"
-      zapConfig = ConfigFactory.parseString("testingAnApi=false").
-        withFallback(
-          ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-        )
-    }
 
-  spiderScanCompleted = true
-  activeScanCompleted = false
+  trait TestSetup {
+    val httpClient: HttpClient = mock[HttpClient]
 
-  describe("html report") {
-    it("should contain the failure threshold so that ") {
-      val f = defaultFixture
-      val reportHtmlAsString: String = generateHtmlReport(f.alerts, f.threshold, spiderScanCompleted, activeScanCompleted)
+    implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
+    val alerts: List[ZapAlert] = Json.parse(alertJson).as[List[ZapAlert]]
+    val threshold = "AUniqueThreshold"
+    val config = ConfigFactory.parseString("testingAnApi=false").
+      withFallback(
+        ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+      )
+
+    val zapConfiguration = new ZapConfiguration(config)
+    val zapApi = new ZapApi(zapConfiguration)
+  }
+
+  "html report" {
+    "should contain the failure threshold so that " in new TestSetup {
+      val reportHtmlAsString: String = generateHtmlReport(alerts, threshold, spiderScanCompleted = true, activeScanCompleted = false)
 
       reportHtmlAsString should include("AUniqueThreshold")
     }
 
-    it("should contain the correct alert count by risk in the Summary of Alerts table") {
+    "should contain the correct alert count by risk in the Summary of Alerts table" in new TestSetup {
       val f = defaultFixture
       val reportHtmlAsString: String = generateHtmlReport(f.alerts, "AUniqueThreshold", spiderScanCompleted, activeScanCompleted)
       val reportXml = XML.loadString(reportHtmlAsString)

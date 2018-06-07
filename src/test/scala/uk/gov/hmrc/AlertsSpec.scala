@@ -18,8 +18,8 @@ package uk.gov.hmrc
 
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
-import uk.gov.hmrc.zap.ZapAlert
-import uk.gov.hmrc.zap.ZapApi._
+import uk.gov.hmrc.utils.ZapConfiguration
+import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
 
 class AlertsSpec extends BaseSpec {
 
@@ -32,9 +32,9 @@ class AlertsSpec extends BaseSpec {
         ZapAlert(evidence = "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
       )
 
-      updateTestConfigWith("ignoreOptimizelyAlerts=true")
+      val zapApi = new ZapApi(new ZapConfiguration(updateTestConfigWith("ignoreOptimizelyAlerts=true")), httpClient)
 
-      val filteredAlerts = filterAlerts(alerts)
+      val filteredAlerts = zapApi.filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
 
     }
