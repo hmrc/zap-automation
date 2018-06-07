@@ -178,8 +178,9 @@ object ZapApi {
   }
 
   lazy val healthCheckUrl: String = {
-    val regex = "http:\\/\\/localhost:\\d+".r
-    s"${regex.findFirstIn(testUrl).get}/ping/ping"
+    val localHostRegex = "http:\\/\\/localhost:\\d+".r
+    val host = localHostRegex.findFirstIn(testUrl).get
+    s"$host/ping/ping"
   }
 
 }
