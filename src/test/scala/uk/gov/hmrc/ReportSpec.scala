@@ -19,10 +19,8 @@ package uk.gov.hmrc
 import com.typesafe.config.ConfigFactory
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
-import uk.gov.hmrc.utils.ZapConfiguration.zapConfig
-import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
-import uk.gov.hmrc.zap.ZapApi._
 import uk.gov.hmrc.zap.ZapReport._
+import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
 
 import scala.xml.{Elem, Node, NodeSeq, XML}
 
@@ -44,7 +42,7 @@ class ReportSpec extends BaseSpec {
     val zapApi = new ZapApi(zapConfiguration)
   }
 
-  "html report" {
+  "html report" should {
     "should contain the failure threshold so that " in new TestSetup {
       val reportHtmlAsString: String = generateHtmlReport(alerts, threshold, spiderScanCompleted = true, activeScanCompleted = false)
 
@@ -52,9 +50,8 @@ class ReportSpec extends BaseSpec {
     }
 
     "should contain the correct alert count by risk in the Summary of Alerts table" in new TestSetup {
-      val f = defaultFixture
-      val reportHtmlAsString: String = generateHtmlReport(f.alerts, "AUniqueThreshold", spiderScanCompleted, activeScanCompleted)
-      val reportXml = XML.loadString(reportHtmlAsString)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanCompleted = true, activeScanCompleted = false)
+      val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "summary-high-count").text shouldBe "1"
       getByAtt(reportXml, "id", "summary-medium-count").text shouldBe "1"
@@ -62,30 +59,27 @@ class ReportSpec extends BaseSpec {
       getByAtt(reportXml, "id", "summary-info-count").text shouldBe "1"
     }
 
-    it("should show the correct scan status in the Summary of Scan table when spiderScan and activeScan is not completed") {
-      val f = defaultFixture
-      val reportHtmlAsString: String = generateHtmlReport(f.alerts, "AUniqueThreshold", spiderScanCompleted = false, activeScanCompleted)
-      val reportXml = XML.loadString(reportHtmlAsString)
+    "should show the correct scan status in the Summary of Scan table when spiderScan and activeScan is not completed" in new TestSetup {
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanCompleted = false, activeScanCompleted = false)
+      val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "passive-scan").text shouldBe "Run"
       getByAtt(reportXml, "id", "spider-scan").text shouldBe "Not Run"
       getByAtt(reportXml, "id", "active-scan").text shouldBe "Not Run"
     }
 
-    it("should show the correct scan status in the Summary of Scan table when spiderScan and ActiveScan is completed") {
-      val f = defaultFixture
-      val reportHtmlAsString: String = generateHtmlReport(f.alerts, "AUniqueThreshold", spiderScanCompleted = true, activeScanCompleted = true)
-      val reportXml = XML.loadString(reportHtmlAsString)
+    "should show the correct scan status in the Summary of Scan table when spiderScan and ActiveScan is completed" in new TestSetup {
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanCompleted = true, activeScanCompleted = true)
+      val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "passive-scan").text shouldBe "Run"
       getByAtt(reportXml, "id", "spider-scan").text shouldBe "Run"
       getByAtt(reportXml, "id", "active-scan").text shouldBe "Run"
     }
 
-    it("should display the details of 4 alerts") {
-      val f = defaultFixture
-      val reportHtmlAsString: String = generateHtmlReport(f.alerts, "AUniqueThreshold", spiderScanCompleted, activeScanCompleted)
-      val reportXml = XML.loadString(reportHtmlAsString)
+    "should display the details of 4 alerts" in new TestSetup {
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanCompleted = true, activeScanCompleted = true)
+      val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "type", "alert-details").size shouldBe 4
     }

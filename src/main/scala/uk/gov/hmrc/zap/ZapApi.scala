@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.zap
 
+import java.net.ConnectException
 import java.util.UUID
 
 import com.typesafe.config.Config
@@ -26,6 +27,7 @@ import uk.gov.hmrc.utils.ZapLogger._
 import uk.gov.hmrc.utils._
 
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
 class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) extends Eventually {
 
@@ -50,13 +52,13 @@ class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClie
     val (status, response) = httpClient.get(zapBaseUrl, queryPath, params: _*)
 
     if (status != 200) {
-      throw ZapException(s"Expected response code is 200, received:$status")
+      throw ZapException(s"Expected response code is 200 for $queryPath, received:$status")
     }
     response
   }
 
-  def hasCallCompleted(url: String): Boolean = {
-    val jsonResponse = Json.parse(callZapApi(url))
+  def hasCallCompleted(path: String): Boolean = {
+    val jsonResponse = Json.parse(callZapApi(path))
     val status = (jsonResponse \ "status").as[String]
     if (status == "100") true else false
   }
@@ -119,6 +121,7 @@ class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClie
     TestHelper.waitForCondition(hasCallCompleted("/json/spider/view/status"), "Spider Timed Out", timeoutInSeconds = 600)
   }
 
+
   def runAndCheckStatusOfActiveScan(contextId: String, policyName: String): Unit = {
     if (activeScan) {
       logger.info(s"Triggering Active Scan.")
@@ -128,8 +131,7 @@ class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClie
         hasCallCompleted("/json/ascan/view/status")
         FixedDelay(100)
       }
-
-      TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
+//      TestHelper.waitForCondition(hasCallCompleted("/json/ascan/view/status"), "Active Scanner Timed Out", timeoutInSeconds = 1800)
     }
     else
       logger.info(s"Skipping Active Scan")
@@ -164,30 +166,34 @@ class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClie
     (jsonResponse \ "alerts").as[List[ZapAlert]]
   }
 
-  def healthCheckTestUrl(): Unit = {
+  def healthCheckTest(): Unit = {
 
     if (debugHealthCheck) {
+      val healthCheckUrl = s"$healthCheckHost/ping/ping"
+
       logger.info(s"Performing health check for the test URL with: $healthCheckUrl")
-      val successStatusRegex = "(2..|3..)"
-      val (status, response) = try {
-        httpClient.getRequest(healthCheckUrl)
+
+      val (status,_) = try {
+        httpClient.get(healthCheckHost, "/ping/ping")
+
       }
       catch {
-        case e: Throwable => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with exception:${e.getMessage}")
+        case NonFatal(e) => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with exception:${e.getMessage}")
       }
 
-      if (!status.toString.matches(successStatusRegex))
-        throw ZapException(s"Health Check failed for test URL: $healthCheckUrl with status:$status")
+      status      match {
+        case 200 => ()
+        case _ => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with status:$status")
+      }
     }
     else {
       logger.info("Health Checking Test Url is disabled. This may result in incorrect test result.")
     }
   }
 
-  lazy val healthCheckUrl: String = {
+  lazy val healthCheckHost: String = {
     val localHostRegex = "http:\\/\\/localhost:\\d+".r
-    val host = localHostRegex.findFirstIn(testUrl).get
-    s"$host/ping/ping"
+    localHostRegex.findFirstIn(testUrl).get
   }
 
 }

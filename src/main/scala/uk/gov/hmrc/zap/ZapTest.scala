@@ -28,12 +28,12 @@ trait ZapTest extends BeforeAndAfterAll {
   var context: Context = _
   var policyName: String = ""
 
-  def zapConfiguration: ZapConfiguration
+  val zapConfiguration: ZapConfiguration
 
   lazy val zapApi = new ZapApi(zapConfiguration)
 
   override def beforeAll(): Unit = {
-    zapApi.healthCheckTestUrl()
+    zapApi.healthCheckTest()
     setupPolicy()
     setupContext()
   }
@@ -41,6 +41,15 @@ trait ZapTest extends BeforeAndAfterAll {
   override def afterAll(): Unit = {
     createTestReport()
     tearDownZap()
+  }
+
+  def triggerZapScan(): Unit = {
+    zapApi.runAndCheckStatusOfSpider(context.name)
+    zapApi.runAndCheckStatusOfActiveScan(context.id, policyName)
+    val relevantAlerts = zapApi.filterAlerts(zapApi.parsedAlerts)
+    if (!zapApi.testSucceeded(relevantAlerts)) {
+      throw ZapException(s"Zap found some new alerts - see link to HMTL report above!")
+    }
   }
 
   private def tearDownZap(): Unit = {

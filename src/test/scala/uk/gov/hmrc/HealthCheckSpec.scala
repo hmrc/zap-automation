@@ -16,61 +16,65 @@
 
 package uk.gov.hmrc
 
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
-import org.mockito.Mockito.{verify, when}
-import uk.gov.hmrc.utils.ZapConfiguration._
-import uk.gov.hmrc.zap.ZapApi._
-import uk.gov.hmrc.zap.ZapException
+import org.mockito.Mockito.{doThrow, verify, when}
+import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
+import uk.gov.hmrc.zap.{ZapApi, ZapException}
 
 class HealthCheckSpec extends BaseSpec {
 
-  describe("Health Check") {
+  trait TestSetup {
+    val httpClient: HttpClient = mock[HttpClient]
 
-    it("should be performed if healthCheck config is set to true") {
+    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
 
-      updateTestConfigWith("debug.healthCheck=true")
+    val zapConfiguration = new ZapConfiguration(config)
+    val zapApi = new ZapApi(zapConfiguration, httpClient)
 
-      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((200, "the-response"))
+  }
 
-      healthCheckTestUrl()
-      verify(wsClientMock).getRequest(healthCheckUrl)
+  "Health Check" should {
+
+    "be performed if healthCheck config is set to true" in new TestSetup {
+
+      when(httpClient.get(zapApi.healthCheckHost, "/ping/ping")).thenReturn((200, "the-response"))
+
+      zapApi.healthCheckTest()
+
+      verify(httpClient).get(zapApi.healthCheckHost, "/ping/ping")
     }
 
-    it("should not be performed if healthCheck config is set to false") {
+    "not be performed if healthCheck config is set to false" in new TestSetup {
 
-      updateTestConfigWith("debug.healthCheck=false")
+      override lazy val config: Config = updateTestConfigWith("debug.healthCheck=false")
 
-      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((200, "the-response"))
+      when(httpClient.get(zapApi.healthCheckHost, "/ping/ping")).thenReturn((200, "the-response"))
 
-      healthCheckTestUrl()
-      Mockito.verifyZeroInteractions(wsClientMock)
+      zapApi.healthCheckTest()
+
+      Mockito.verifyZeroInteractions(httpClient)
     }
 
-    it("should fail if healthCheck response status code did not match 2xx or 3xx") {
+    "fail if healthCheck response status code did not match 200" in new TestSetup {
+      when(httpClient.get(zapApi.healthCheckHost, "/ping/ping")).thenReturn((400, "the-response"))
 
-      updateTestConfigWith("debug.healthCheck=true")
-
-      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((400, "the-response"))
-      try {
-        healthCheckTestUrl()
-      }
-      catch {
-        case e: ZapException => e.getMessage() shouldBe s"Health Check failed for test URL: $healthCheckUrl with status:400"
-      }
+      intercept[ZapException](zapApi.healthCheckTest())
     }
 
-    it("should not fail if healthCheck response status code 2xx") {
+    "throw a ZapException if a non-fatal exception occurs" in new TestSetup {
+      val exception = new RuntimeException("some non-fatal exception")
+      doThrow(exception).when(httpClient).get(zapApi.healthCheckHost, "/ping/ping")
 
-      updateTestConfigWith("debug.healthCheck=true")
-
-      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((200, "the-response"))
-      healthCheckTestUrl()
+      intercept[ZapException](zapApi.healthCheckTest())
     }
 
-    it("should not fail if healthCheck response status code 3xx") {
+    "non handle fatal exceptions" in new TestSetup {
+      val fatalException = new OutOfMemoryError
+      doThrow(fatalException).when(httpClient).get(zapApi.healthCheckHost, "/ping/ping")
 
-      when(wsClientMock.getRequest(healthCheckUrl)).thenReturn((302, "the-response"))
-      healthCheckTestUrl()
+      intercept[OutOfMemoryError](zapApi.healthCheckTest())
     }
+
   }
 }

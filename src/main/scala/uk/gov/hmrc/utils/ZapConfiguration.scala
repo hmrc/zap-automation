@@ -23,7 +23,7 @@ import scala.collection.JavaConversions._
 
 class ZapConfiguration(userConfig: Config) {
 
-  lazy val zapConfig = userConfig.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
+  lazy val zapConfig: Config = userConfig.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
 
   if (zapConfig.getBoolean("debug.printConfig")) {
     val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)

@@ -16,54 +16,68 @@
 
 package uk.gov.hmrc
 
-import uk.gov.hmrc.zap.ZapAlert
+import com.typesafe.config.{Config, ConfigFactory}
+import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
+import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
 
 class FailureThresholdSpec extends BaseSpec {
 
-  it("should fail if there are alerts above the threshold specified in the config") {
+  trait TestSetup {
+    val httpClient: HttpClient = mock[HttpClient]
+    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val zapConfiguration = new ZapConfiguration(config)
 
-    updateTestConfigWith("failureThreshold=Medium")
+    val zapApi = new ZapApi(zapConfiguration, httpClient)
 
-    val alerts = List[ZapAlert](
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "High"),
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
-    )
-    assert(!testSucceeded(alerts))
   }
 
-  it("should fail if there are alerts matching the threshold specified in the config") {
+  "Failure Threshold" should {
 
-    updateTestConfigWith("failureThreshold=Medium")
+    "should fail if there are alerts above the threshold specified in the config" in new TestSetup {
 
-    val alerts = List[ZapAlert](
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Medium"),
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
-    )
+      override lazy val config: Config = updateTestConfigWith("failureThreshold=Medium")
 
-    assert(!testSucceeded(alerts))
-  }
+      val alerts: List[ZapAlert] = List[ZapAlert](
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "High"),
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
+      )
+      assert(!zapApi.testSucceeded(alerts))
+    }
 
-  it("should not fail if there are alerts below the threshold specified in the config") {
+    "should fail if there are alerts matching the threshold specified in the config" in new TestSetup {
 
-    updateTestConfigWith("failureThreshold=Medium")
+      override lazy val config: Config = updateTestConfigWith("failureThreshold=Medium")
 
-    val alerts = List[ZapAlert](
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
-    )
+      val alerts: List[ZapAlert] = List[ZapAlert](
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Medium"),
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
+      )
 
-    assert(testSucceeded(alerts))
-  }
+      assert(!zapApi.testSucceeded(alerts))
+    }
 
-  it("should not fail for an Informational alert") {
+    "should not fail if there are alerts below the threshold specified in the config" in new TestSetup {
 
-    updateTestConfigWith("failureThreshold=Medium")
+      override lazy val config: Config = updateTestConfigWith("failureThreshold=Medium")
 
-    val alerts = List[ZapAlert](
-      ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
-    )
-    assert(testSucceeded(alerts))
+      val alerts: List[ZapAlert] = List[ZapAlert](
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", risk = "Low"),
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
+      )
+
+      assert(zapApi.testSucceeded(alerts))
+    }
+
+    "should not fail for an Informational alert" in new TestSetup {
+
+      override lazy val config: Config = updateTestConfigWith("failureThreshold=Medium")
+
+      val alerts: List[ZapAlert] = List[ZapAlert](
+        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
+      )
+      assert(zapApi.testSucceeded(alerts))
+    }
   }
 }

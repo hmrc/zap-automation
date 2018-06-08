@@ -18,10 +18,10 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
+import org.scalatest.{Matchers, WordSpec}
 
 
-class BaseSpec extends WordSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
+class BaseSpec extends WordSpec with Matchers with MockitoSugar {
 
   def updateTestConfigWith(config: String): Config = {
     ConfigFactory.parseString(config).

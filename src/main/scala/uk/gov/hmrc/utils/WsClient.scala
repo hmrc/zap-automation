@@ -29,8 +29,6 @@ trait HttpClient {
 
   def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String)
 
-  def getRequest(url: String, params: (String, String)*): (Int, String)
-
 }
 
 object WsClient extends HttpClient {
@@ -44,11 +42,6 @@ object WsClient extends HttpClient {
   def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String) = {
 
     val url = s"$zapBaseUrl$queryPath"
-    getRequest(url, params: _*)
-  }
-
-  def getRequest(url: String, params: (String, String)*): (Int, String) = {
-
     val client = asyncClient
     val response: WSResponse = Await.result(client.url(s"$url")
       .withHeaders("ContentType" -> "application/json;charset=utf-8")
@@ -58,6 +51,5 @@ object WsClient extends HttpClient {
     client.close()
 
     (response.status, response.body)
-
   }
 }

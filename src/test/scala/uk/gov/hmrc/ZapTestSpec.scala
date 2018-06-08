@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
@@ -30,41 +30,38 @@ class ZapTestSpec extends BaseSpec {
     val httpClient: HttpClient = mock[HttpClient]
 
     implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
-    val config = ConfigFactory.parseString("testingAnApi=false").
-      withFallback(
-        ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-      )
+    lazy val config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
 
     val zapConfiguration = new ZapConfiguration(config)
-    val zapApi = new ZapApi(zapConfiguration)
+    val zapApi = new ZapApi(zapConfiguration, httpClient)
 
   }
 
   private val jsonStatus = """{"status": "100"}"""
 
-  "callZapApiTo" {
+  "callZapApiTo" should {
 
-    "should return a response" in new TestSetup {
+    "return a response" in new TestSetup {
       when(httpClient.get(zapConfiguration.zapBaseUrl, "/someUrl")).thenReturn((200, "the-response"))
 
       val response: String = zapApi.callZapApi("/someUrl")
       response shouldBe "the-response"
     }
 
-    "should fail the test when the status code is not a 200" in new TestSetup {
+    "fail the test when the status code is not a 200" in new TestSetup {
       when(httpClient.get(zapConfiguration.zapBaseUrl, "/someInvalidUrl")).thenReturn((400, "the-response"))
       try {
         zapApi.callZapApi("/someInvalidUrl")
       }
       catch {
-        case e: ZapException => e.getMessage shouldBe "Expected response code is 200, received:400"
+        case e: ZapException => e.getMessage shouldBe "Expected response code is 200 for /someInvalidUrl, received:400"
       }
     }
   }
 
-  "hasCallCompleted" {
+  "hasCallCompleted" should {
 
-    "should return true if status is 200" in new TestSetup {
+    "return true if status is 200" in new TestSetup {
       when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
       val answer = zapApi.hasCallCompleted("/someUrl")
       answer shouldBe true
@@ -77,9 +74,9 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  "createContext" {
+  "createContext" should {
 
-    "should return the context ID" in new TestSetup {
+    "return the context ID" in new TestSetup {
       when(httpClient.get(any(), any(), any())).thenReturn((200, "{\n\"contextId\": \"2\"\n}"))
 
       val context: Context = zapApi.createContext()
@@ -87,9 +84,9 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  "setUpContext" {
+  "setUpContext" should {
 
-    "should call the Zap API to set up the context" in new TestSetup {
+    "call the Zap API to set up the context" in new TestSetup {
       val context = "context1"
       import zapConfiguration._
 
@@ -102,9 +99,9 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  "createPolicy" {
+  "createPolicy" should {
 
-    "should call the Zap API to create the policy" in new TestSetup {
+    "call the Zap API to create the policy" in new TestSetup {
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
       val policyName = zapApi.createPolicy()
@@ -115,11 +112,9 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  "setUpPolicy" {
+  "setUpPolicy" should {
 
-    "should call the Zap API to set up the policy with scanners meant for UI testing" in new TestSetup {
-
-      updateTestConfigWith("testingAnApi=false")
+    "call the Zap API to set up the policy with scanners meant for UI testing" in new TestSetup {
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
@@ -128,9 +123,9 @@ class ZapTestSpec extends BaseSpec {
 
     }
 
-    "should call the Zap API to set up the policy with scanners meant for API testing" in new TestSetup {
+    "call the Zap API to set up the policy with scanners meant for API testing" in new TestSetup {
 
-      updateTestConfigWith("testingAnApi=true")
+      override lazy val config: Config = updateTestConfigWith("testingAnApi=true")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
@@ -140,9 +135,9 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  "runAndCheckStatusOfSpider" {
+  "runAndCheckStatusOfSpider" should {
 
-    "should call Zap API to run the spider scan" in new TestSetup {
+    "call Zap API to run the spider scan" in new TestSetup {
       val contextName = "context1"
       import zapConfiguration._
 
@@ -154,11 +149,11 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  "runAndCheckStatusOfActiveScan" {
+  "runAndCheckStatusOfActiveScan" should {
 
-    "should call Zap API to run the active scan only if activeScan config is set to true" in new TestSetup {
+    "call Zap API to run the active scan only if activeScan config is set to true" in new TestSetup {
 
-      updateTestConfigWith("activeScan=true")
+      override lazy val config: Config = updateTestConfigWith("activeScan=true")
 
       val contextId = ""
       val policyName = ""
@@ -170,10 +165,9 @@ class ZapTestSpec extends BaseSpec {
       verify(httpClient).get(zapBaseUrl, "/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
     }
 
-    "should not call Zap API to run the active scan if activeScan config is set to false" in new TestSetup {
+    "not call Zap API to run the active scan if activeScan config is set to false" in new TestSetup {
       val contextId = ""
       val policyName = ""
-      updateTestConfigWith("activeScan=false")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
@@ -182,9 +176,9 @@ class ZapTestSpec extends BaseSpec {
     }
   }
 
-  "tearDown" {
+  "tearDown" should {
 
-    "should remove context, policy and alerts" in new TestSetup {
+    "remove context, policy and alerts" in new TestSetup {
       val contextName = "context-name"
       val policyName = "policy-name"
       import zapConfiguration._
