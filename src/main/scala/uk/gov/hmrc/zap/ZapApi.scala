@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.zap
 
-import java.net.ConnectException
 import java.util.UUID
 
 import com.typesafe.config.Config
@@ -27,7 +26,6 @@ import uk.gov.hmrc.utils.ZapLogger._
 import uk.gov.hmrc.utils._
 
 import scala.collection.mutable.ListBuffer
-import scala.util.control.NonFatal
 
 class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) extends Eventually {
 
@@ -164,36 +162,6 @@ class ZapApi(zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClie
     val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> alertsBaseUrl)
     val jsonResponse = Json.parse(response)
     (jsonResponse \ "alerts").as[List[ZapAlert]]
-  }
-
-  def healthCheckTest(): Unit = {
-
-    if (debugHealthCheck) {
-      val healthCheckUrl = s"$healthCheckHost/ping/ping"
-
-      logger.info(s"Performing health check for the test URL with: $healthCheckUrl")
-
-      val (status,_) = try {
-        httpClient.get(healthCheckHost, "/ping/ping")
-
-      }
-      catch {
-        case NonFatal(e) => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with exception:${e.getMessage}")
-      }
-
-      status      match {
-        case 200 => ()
-        case _ => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with status:$status")
-      }
-    }
-    else {
-      logger.info("Health Checking Test Url is disabled. This may result in incorrect test result.")
-    }
-  }
-
-  lazy val healthCheckHost: String = {
-    val localHostRegex = "http:\\/\\/localhost:\\d+".r
-    localHostRegex.findFirstIn(testUrl).get
   }
 
 }

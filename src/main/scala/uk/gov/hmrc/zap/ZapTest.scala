@@ -18,10 +18,10 @@ package uk.gov.hmrc.zap
 
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import uk.gov.hmrc.utils.ZapConfiguration
-import uk.gov.hmrc.zap.ZapReport._
 import uk.gov.hmrc.utils.ZapLogger._
+import uk.gov.hmrc.zap.ZapReport._
 
-trait ZapTest extends BeforeAndAfterAll {
+trait ZapTest extends BeforeAndAfterAll with HealthCheck {
 
   this: Suite =>
 
@@ -33,7 +33,9 @@ trait ZapTest extends BeforeAndAfterAll {
   lazy val zapApi = new ZapApi(zapConfiguration)
 
   override def beforeAll(): Unit = {
-    zapApi.healthCheckTest()
+    if (zapConfiguration.debugHealthCheck) {
+      healthCheck(zapConfiguration.testUrl)
+    }
     setupPolicy()
     setupContext()
   }

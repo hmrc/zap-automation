@@ -17,63 +17,50 @@
 package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.mockito.Mockito
+import org.mockito.Matchers.any
 import org.mockito.Mockito.{doThrow, verify, when}
 import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
-import uk.gov.hmrc.zap.{ZapApi, ZapException}
+import uk.gov.hmrc.zap.{HealthCheck, ZapException}
+
 
 class HealthCheckSpec extends BaseSpec {
 
-  trait TestSetup {
-    val httpClient: HttpClient = mock[HttpClient]
 
+  trait TestSetup extends HealthCheck {
+    override val httpClient: HttpClient = mock[HttpClient]
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-
     val zapConfiguration = new ZapConfiguration(config)
-    val zapApi = new ZapApi(zapConfiguration, httpClient)
-
   }
 
   "Health Check" should {
 
     "be performed if healthCheck config is set to true" in new TestSetup {
+      val healthCheckHost: String = "http:\\/\\/localhost:\\d+".r.findFirstIn(zapConfiguration.testUrl).get
+      when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      when(httpClient.get(zapApi.healthCheckHost, "/ping/ping")).thenReturn((200, "the-response"))
+      healthCheck(zapConfiguration.testUrl)
 
-      zapApi.healthCheckTest()
-
-      verify(httpClient).get(zapApi.healthCheckHost, "/ping/ping")
-    }
-
-    "not be performed if healthCheck config is set to false" in new TestSetup {
-
-      override lazy val config: Config = updateTestConfigWith("debug.healthCheck=false")
-
-      when(httpClient.get(zapApi.healthCheckHost, "/ping/ping")).thenReturn((200, "the-response"))
-
-      zapApi.healthCheckTest()
-
-      Mockito.verifyZeroInteractions(httpClient)
+      verify(httpClient).get(healthCheckHost, "/ping/ping")
     }
 
     "fail if healthCheck response status code did not match 200" in new TestSetup {
-      when(httpClient.get(zapApi.healthCheckHost, "/ping/ping")).thenReturn((400, "the-response"))
+      when(httpClient.get(any(), any(), any())).thenReturn((400, "the-response"))
 
-      intercept[ZapException](zapApi.healthCheckTest())
+      intercept[ZapException](healthCheck(zapConfiguration.testUrl))
     }
 
     "throw a ZapException if a non-fatal exception occurs" in new TestSetup {
       val exception = new RuntimeException("some non-fatal exception")
-      doThrow(exception).when(httpClient).get(zapApi.healthCheckHost, "/ping/ping")
+      doThrow(exception).when(httpClient).get(any(), any(), any())
 
-      intercept[ZapException](zapApi.healthCheckTest())
+      intercept[ZapException](healthCheck(zapConfiguration.testUrl))
     }
 
     "non handle fatal exceptions" in new TestSetup {
       val fatalException = new OutOfMemoryError
-      doThrow(fatalException).when(httpClient).get(zapApi.healthCheckHost, "/ping/ping")
+      doThrow(fatalException).when(httpClient).get(any(), any(), any())
 
-      intercept[OutOfMemoryError](zapApi.healthCheckTest())
+      intercept[OutOfMemoryError](healthCheck(zapConfiguration.testUrl))
     }
 
   }

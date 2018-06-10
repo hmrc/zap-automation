@@ -31,6 +31,10 @@ class ZapConfiguration(userConfig: Config) {
       zapConfig.root().render(renderOpts))
   }
 
+  if(!debugHealthCheck){
+    logger.warn("Health Checking Test Url is disabled. This may result in incorrect test result.")
+  }
+
   def activeScan: Boolean = zapConfig.getBoolean("activeScan")
 
   def failureThreshold: String = zapConfig.getString("failureThreshold")
