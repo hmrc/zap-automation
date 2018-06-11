@@ -25,19 +25,23 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
 
   this: Suite =>
 
-  var context: Context = _
-  var policyName: String = ""
-
   val zapConfiguration: ZapConfiguration
 
-  lazy val zapApi = new ZapApi(zapConfiguration)
+  private lazy val owaspZap = new OwaspZap(zapConfiguration)
+  private lazy val zapScan = new ZapScan(owaspZap)
+  private lazy val zapAlerts = new ZapAlerts(owaspZap)
+  private lazy val zapSetup = new ZapSetUp(owaspZap)
 
   override def beforeAll(): Unit = {
     if (zapConfiguration.debugHealthCheck) {
       healthCheck(zapConfiguration.testUrl)
     }
-    setupPolicy()
-    setupContext()
+    setupZap()
+  }
+
+  def triggerZapScan(): Unit = {
+    startZapScan()
+    verifyAlerts()
   }
 
   override def afterAll(): Unit = {
@@ -45,38 +49,40 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
     tearDownZap()
   }
 
-  def triggerZapScan(): Unit = {
-    zapApi.runAndCheckStatusOfSpider(context.name)
-    zapApi.runAndCheckStatusOfActiveScan(context.id, policyName)
-    val relevantAlerts = zapApi.filterAlerts(zapApi.parsedAlerts)
-    if (!zapApi.testSucceeded(relevantAlerts)) {
-      throw ZapException(s"Zap found some new alerts - see link to HMTL report above!")
-    }
-  }
-
   private def tearDownZap(): Unit = {
     if (zapConfiguration.debugTearDown) {
-      logger.debug(s"Removing ZAP Context (${context.name}) Policy ($policyName), and all alerts.")
-      zapApi.tearDown(context.name, policyName)
+      logger.debug(s"Removing ZAP Context (${zapSetup.contextName}) Policy (${zapSetup.policyName}), and all alerts.")
+      ZapTearDown(owaspZap, zapSetup)
     } else {
       logger.debug("Skipping Tear Down")
     }
   }
 
   private def createTestReport(): Unit = {
-    val relevantAlerts = zapApi.filterAlerts(zapApi.parsedAlerts)
-    writeToFile(generateHtmlReport(relevantAlerts.sortBy{ _.severityScore() }, zapConfiguration.failureThreshold,
-      zapApi.hasCallCompleted("/json/spider/view/status"), zapApi.hasCallCompleted("/json/ascan/view/status")))
+    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
+    writeToFile(generateHtmlReport(relevantAlerts.sortBy {
+      _.severityScore()
+    }, zapConfiguration.failureThreshold,
+      zapScan.spiderCompleted, zapScan.activeScanCompleted))
   }
 
-  private def setupPolicy(): Unit = {
-    policyName = zapApi.createPolicy()
-    zapApi.setUpPolicy(policyName)
+  private def setupZap(): Unit = {
+    zapSetup.createPolicy()
+    zapSetup.setUpPolicy(zapSetup.policyName)
+    zapSetup.createContext()
+    zapSetup.setUpContext(zapSetup.contextName)
   }
 
-  private def setupContext(): Unit = {
-    context = zapApi.createContext()
-    zapApi.setUpContext(context.name)
+  private def startZapScan(): Unit = {
+    zapScan.runAndCheckStatusOfSpider(zapSetup.contextName)
+    zapScan.runAndCheckStatusOfActiveScan(zapSetup.contextId, zapSetup.policyName)
+  }
+
+  private def verifyAlerts(): Unit = {
+    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
+    if (!ZapTestStatus.isTestSucceeded(relevantAlerts, zapConfiguration.failureThreshold)) {
+      throw ZapException(s"Zap found some new alerts - see link to HMTL report above!")
+    }
   }
 
 }

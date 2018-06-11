@@ -61,4 +61,6 @@ class ZapConfiguration(userConfig: Config) {
 
   def debugTearDown: Boolean = zapConfig.getBoolean("debug.tearDown")
 
+  def patienceConfigTimeout: Int = zapConfig.getInt("debug.patienceConfigTimeout")
+
 }

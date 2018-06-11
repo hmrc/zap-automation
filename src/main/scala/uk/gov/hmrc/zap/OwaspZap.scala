@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap
 
-object FixedDelay {
+import uk.gov.hmrc.utils.{HttpClient, WsClient, ZapConfiguration}
 
-  def apply(millis: Long): Unit = concurrent.blocking(Thread.sleep(millis))
 
+class OwaspZap(val zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) {
+
+  def callZapApi(queryPath: String, params: (String, String)*): String = {
+
+    val (status, response) = httpClient.get(zapConfiguration.zapBaseUrl, queryPath, params: _*)
+
+    if (status != 200) {
+      throw ZapException(s"Expected response code is 200 for $queryPath, received:$status")
+    }
+    response
+  }
 }

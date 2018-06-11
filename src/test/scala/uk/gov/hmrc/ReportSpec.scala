@@ -16,16 +16,15 @@
 
 package uk.gov.hmrc
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
+import uk.gov.hmrc.zap.ZapAlert
 import uk.gov.hmrc.zap.ZapReport._
-import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
 
 import scala.xml.{Elem, Node, NodeSeq, XML}
 
 class ReportSpec extends BaseSpec {
-
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
@@ -33,13 +32,8 @@ class ReportSpec extends BaseSpec {
     implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
     val alerts: List[ZapAlert] = Json.parse(alertJson).as[List[ZapAlert]]
     val threshold = "AUniqueThreshold"
-    val config = ConfigFactory.parseString("testingAnApi=false").
-      withFallback(
-        ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-      )
-
+    val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     val zapConfiguration = new ZapConfiguration(config)
-    val zapApi = new ZapApi(zapConfiguration)
   }
 
   "html report" should {

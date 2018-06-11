@@ -20,7 +20,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
 import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
-import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
+import uk.gov.hmrc.zap.{OwaspZap, ZapAlert, ZapAlerts}
 
 class AlertsSpec extends BaseSpec {
 
@@ -28,9 +28,8 @@ class AlertsSpec extends BaseSpec {
     val httpClient: HttpClient = mock[HttpClient]
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     val zapConfiguration = new ZapConfiguration(config)
-
-    val zapApi = new ZapApi(zapConfiguration, httpClient)
-
+    val owaspZap = new OwaspZap(zapConfiguration, httpClient)
+    val zapAlerts = new ZapAlerts(owaspZap)
   }
 
   "filterAlerts" should {
@@ -44,7 +43,7 @@ class AlertsSpec extends BaseSpec {
 
       override lazy val config: Config = updateTestConfigWith("ignoreOptimizelyAlerts=true")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
 
     }
@@ -56,7 +55,7 @@ class AlertsSpec extends BaseSpec {
         ZapAlert("", "<script src=\"https://cdn.otherevidence.com/public/7589613084/s/pta_tenant.js\"></script>", url = "", cweid = "")
       )
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 3
     }
 
@@ -68,7 +67,7 @@ class AlertsSpec extends BaseSpec {
       )
       override lazy val config: Config = updateTestConfigWith("ignoreOptimizelyAlerts=true")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 3
     }
 
@@ -81,7 +80,7 @@ class AlertsSpec extends BaseSpec {
 
       override lazy val config: Config = updateTestConfigWith("""alertsToIgnore=[{cweid: "16", url: "http://beccy.com/"}]""")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
     }
 
@@ -95,7 +94,7 @@ class AlertsSpec extends BaseSpec {
       override lazy val config: Config = updateTestConfigWith(
         """alertsToIgnore=[{cweid: "16", url: "http://localhost:9999/hello/\\w{3}/here"}]""")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 2
     }
 
@@ -111,7 +110,7 @@ class AlertsSpec extends BaseSpec {
           {cweid: 17, url: "http://localhost:9999/hello/\\w{10}/here"},
           {cweid: 18, url: "http://localhost:9999/hello/here"}]""")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
     }
 
@@ -124,7 +123,7 @@ class AlertsSpec extends BaseSpec {
       override lazy val config: Config = updateTestConfigWith(
         """alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"}]""")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
     }
 
@@ -138,7 +137,7 @@ class AlertsSpec extends BaseSpec {
       override lazy val config: Config = updateTestConfigWith(
         """alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/\\w{9}/here"}]""")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
     }
 
@@ -151,7 +150,7 @@ class AlertsSpec extends BaseSpec {
       override lazy val config: Config = updateTestConfigWith(
         """alertsToIgnore=[{cweid: 16, url: "http://localhost:9999/hello/SB363126A/here"}]""")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
     }
 
@@ -168,7 +167,7 @@ class AlertsSpec extends BaseSpec {
           |[{cweid: 16, url: "http://localhost:99991/hello/SB363126A(/optional)?/something-else\\?param1=1234"}]
           |""".stripMargin)
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
     }
 
@@ -181,7 +180,7 @@ class AlertsSpec extends BaseSpec {
       override lazy val config: Config = updateTestConfigWith(
         """alertsToIgnore=[{cweid: 16, url: "https://www.gstatic.com/chrome/intelligence/.*"}]""")
 
-      val filteredAlerts: List[ZapAlert] = zapApi.filterAlerts(alerts)
+      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 0
     }
   }
@@ -217,7 +216,7 @@ class AlertsSpec extends BaseSpec {
                                                                                       }"""))
 
       val alert1: ZapAlert = ZapAlert("Other text", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
-      zapApi.parsedAlerts should contain theSameElementsAs List(alert1)
+      zapAlerts.parsedAlerts should contain theSameElementsAs List(alert1)
     }
   }
 }

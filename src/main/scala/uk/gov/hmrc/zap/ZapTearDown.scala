@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap
 
-class TestHelper
+class ZapTearDown(owaspZap: OwaspZap, zapSetUp: ZapSetUp) {}
 
-object TestHelper {
+object ZapTearDown {
 
-  def waitForCondition(condition: => Boolean, exceptionMessage: String, timeoutInSeconds: Int = 5) {
-    val endTime = System.currentTimeMillis + timeoutInSeconds * 1000
-    while (System.currentTimeMillis < endTime) {
-      if (condition) {
-        return
-      }
-      FixedDelay(100)
-    }
-    throw new Exception(exceptionMessage)
+
+  def apply(owaspZap: OwaspZap, zapSetUp: ZapSetUp) = {
+
+    import owaspZap._
+
+    callZapApi("/json/context/action/removeContext", "contextName" -> zapSetUp.contextName)
+    callZapApi("/json/ascan/action/removeScanPolicy", "scanPolicyName" -> zapSetUp.policyName)
+    callZapApi("/json/core/action/deleteAllAlerts")
   }
-
 }

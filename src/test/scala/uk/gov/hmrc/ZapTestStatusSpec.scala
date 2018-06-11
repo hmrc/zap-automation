@@ -18,20 +18,18 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
-import uk.gov.hmrc.zap.{ZapAlert, ZapApi}
+import uk.gov.hmrc.zap.{OwaspZap, ZapAlert, ZapTestStatus}
 
-class FailureThresholdSpec extends BaseSpec {
+class ZapTestStatusSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     val zapConfiguration = new ZapConfiguration(config)
-
-    val zapApi = new ZapApi(zapConfiguration, httpClient)
-
+    val owaspZap = new OwaspZap(zapConfiguration, httpClient)
   }
 
-  "Failure Threshold" should {
+  "Zap Test" should {
 
     "should fail if there are alerts above the threshold specified in the config" in new TestSetup {
 
@@ -42,7 +40,7 @@ class FailureThresholdSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "High"),
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
       )
-      assert(!zapApi.testSucceeded(alerts))
+      assert(!ZapTestStatus.isTestSucceeded(alerts, zapConfiguration.failureThreshold))
     }
 
     "should fail if there are alerts matching the threshold specified in the config" in new TestSetup {
@@ -55,7 +53,7 @@ class FailureThresholdSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
       )
 
-      assert(!zapApi.testSucceeded(alerts))
+      assert(!ZapTestStatus.isTestSucceeded(alerts, zapConfiguration.failureThreshold))
     }
 
     "should not fail if there are alerts below the threshold specified in the config" in new TestSetup {
@@ -67,7 +65,7 @@ class FailureThresholdSpec extends BaseSpec {
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
       )
 
-      assert(zapApi.testSucceeded(alerts))
+      assert(ZapTestStatus.isTestSucceeded(alerts, zapConfiguration.failureThreshold))
     }
 
     "should not fail for an Informational alert" in new TestSetup {
@@ -77,7 +75,7 @@ class FailureThresholdSpec extends BaseSpec {
       val alerts: List[ZapAlert] = List[ZapAlert](
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/YZ570921/here", risk = "Informational")
       )
-      assert(zapApi.testSucceeded(alerts))
+      assert(ZapTestStatus.isTestSucceeded(alerts, zapConfiguration.failureThreshold))
     }
   }
 }
