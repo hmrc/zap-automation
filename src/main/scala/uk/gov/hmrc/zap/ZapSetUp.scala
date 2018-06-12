@@ -19,22 +19,27 @@ package uk.gov.hmrc.zap
 import java.util.UUID
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.utils.ZapLogger.logger
+import uk.gov.hmrc.zap.logger.ZapLogger.log
 
 class ZapSetUp(owaspZap: OwaspZap) {
 
   import owaspZap._
   import owaspZap.zapConfiguration._
 
-  private var _contextId: String = _
-  private var _contextName: String = _
-  private var _policyName: String = _
+  def initialize(): ZapContext = {
 
+    val contextName = UUID.randomUUID.toString
+    val policyName = UUID.randomUUID.toString
 
-  def createPolicy(): Unit = {
-    _policyName = UUID.randomUUID.toString
     owaspZap.callZapApi("/json/ascan/action/addScanPolicy", "scanPolicyName" -> policyName)
-    logger.info(s"Creating policy: $policyName")
+    setUpPolicy(policyName)
+
+    val response: String = callZapApi("/json/context/action/newContext", "contextName" -> contextName)
+    val contextId = (Json.parse(response) \ "contextId").as[String]
+    setUpContext(contextName)
+
+    log.info(s"Initialized context. Id: $contextId, name: $contextName, policy: $policyName")
+    ZapContext(contextId, contextName, policyName)
   }
 
   def setUpPolicy(policyName: String): Unit = {
@@ -51,15 +56,6 @@ class ZapSetUp(owaspZap: OwaspZap) {
     }
   }
 
-  def createContext(): Unit = {
-    _contextName = UUID.randomUUID.toString
-    val response: String = callZapApi("/json/context/action/newContext", "contextName" -> contextName)
-    val jsonResponse = Json.parse(response)
-    _contextId = (jsonResponse \ "contextId").as[String]
-    logger.info(s"Context Name: $contextName")
-    logger.info(s"Context Id: $contextId")
-  }
-
   def setUpContext(contextName: String): Unit = {
     callZapApi("/json/context/action/includeInContext", "contextName" -> contextName, "regex" -> contextBaseUrl)
     callZapApi("/json/context/action/excludeAllContextTechnologies", "contextName" -> contextName)
@@ -72,12 +68,7 @@ class ZapSetUp(owaspZap: OwaspZap) {
       callZapApi("/json/context/action/excludeFromContext", "contextName" -> contextName, "regex" -> routeToBeIgnoredFromContext)
     }
   }
-
-  def contextId: String = _contextId
-
-  def contextName: String = _contextName
-
-  def policyName: String = _policyName
-
-
 }
+
+
+case class ZapContext(id: String, name: String, policy: String)

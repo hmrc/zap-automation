@@ -19,15 +19,13 @@ package uk.gov.hmrc.zap
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.libs.json.Json
-import uk.gov.hmrc.utils.ZapLogger.logger
+import uk.gov.hmrc.zap.logger.ZapLogger.log
 
 class ZapScan(owaspZap: OwaspZap) extends Eventually {
 
   import owaspZap._
   import owaspZap.zapConfiguration._
 
-  private var _spiderCompleted = false
-  private var _activeScanCompleted = false
 
   implicit override val patienceConfig =
     PatienceConfig(timeout = scaled(Span(patienceConfigTimeout, Seconds)), interval = scaled(Span(500, Millis)))
@@ -35,33 +33,37 @@ class ZapScan(owaspZap: OwaspZap) extends Eventually {
   def runAndCheckStatusOfSpider(contextName: String): Unit = {
     callZapApi("/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
     eventually {
-      hasCallCompleted("/json/spider/view/status")
+      spiderRunStatus
     }
-    _spiderCompleted = true
   }
 
+  def spiderRunStatus: Boolean = {
+    hasCallCompleted("/json/spider/view/status")
+  }
 
-  def runAndCheckStatusOfActiveScan(contextId: String, policyName: String): Unit = {
+  def runAndCheckStatusOfActiveScan(implicit zapContext: ZapContext): Unit = {
     if (activeScan) {
-      logger.info(s"Triggering Active Scan.")
-      callZapApi("/json/ascan/action/scan", "contextId" -> contextId, "scanPolicyName" -> policyName, "url" -> testUrl)
-
+      log.info(s"Triggering Active Scan.")
+      callZapApi("/json/ascan/action/scan", "contextId" -> zapContext.id, "scanPolicyName" -> zapContext.policy, "url" -> testUrl)
       eventually {
-        hasCallCompleted("/json/ascan/view/status")
+        activeScanStatus
       }
-      _activeScanCompleted = true
     }
     else
-      logger.info(s"Skipping Active Scan")
+      log.info(s"Skipping Active Scan")
   }
 
-  def activeScanCompleted: Boolean = _activeScanCompleted
-
-  def spiderCompleted: Boolean = _spiderCompleted
+  def activeScanStatus: Boolean = {
+    if (activeScan) {
+      hasCallCompleted("/json/spider/view/status")
+    }
+    else
+      false
+  }
 
   private def hasCallCompleted(path: String): Boolean = {
     val jsonResponse = Json.parse(callZapApi(path))
-    var status = (jsonResponse \ "status").as[String]
+    val status = (jsonResponse \ "status").as[String]
     if (status != "100") {
       throw ZapException(s"Request to path $path failed to return 100% complete.")
     }

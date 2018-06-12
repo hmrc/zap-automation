@@ -17,9 +17,9 @@
 package uk.gov.hmrc.zap
 
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import uk.gov.hmrc.utils.ZapConfiguration
-import uk.gov.hmrc.utils.ZapLogger._
 import uk.gov.hmrc.zap.ZapReport._
+import uk.gov.hmrc.zap.config.ZapConfiguration
+import uk.gov.hmrc.zap.logger.ZapLogger._
 
 trait ZapTest extends BeforeAndAfterAll with HealthCheck {
 
@@ -32,58 +32,39 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
   private lazy val zapAlerts = new ZapAlerts(owaspZap)
   private lazy val zapSetup = new ZapSetUp(owaspZap)
 
+  private implicit lazy val zapContext: ZapContext = zapSetup.initialize()
+
   override def beforeAll(): Unit = {
     if (zapConfiguration.debugHealthCheck) {
       healthCheck(zapConfiguration.testUrl)
     }
-    setupZap()
   }
 
   def triggerZapScan(): Unit = {
-    startZapScan()
-    verifyAlerts()
-  }
+    zapScan.runAndCheckStatusOfSpider(zapContext.name)
+    zapScan.runAndCheckStatusOfActiveScan
 
-  override def afterAll(): Unit = {
-    createTestReport()
-    tearDownZap()
-  }
-
-  private def tearDownZap(): Unit = {
-    if (zapConfiguration.debugTearDown) {
-      logger.debug(s"Removing ZAP Context (${zapSetup.contextName}) Policy (${zapSetup.policyName}), and all alerts.")
-      ZapTearDown(owaspZap, zapSetup)
-    } else {
-      logger.debug("Skipping Tear Down")
-    }
-  }
-
-  private def createTestReport(): Unit = {
-    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
-    writeToFile(generateHtmlReport(relevantAlerts.sortBy {
-      _.severityScore()
-    }, zapConfiguration.failureThreshold,
-      zapScan.spiderCompleted, zapScan.activeScanCompleted))
-  }
-
-  private def setupZap(): Unit = {
-    zapSetup.createPolicy()
-    zapSetup.setUpPolicy(zapSetup.policyName)
-    zapSetup.createContext()
-    zapSetup.setUpContext(zapSetup.contextName)
-  }
-
-  private def startZapScan(): Unit = {
-    zapScan.runAndCheckStatusOfSpider(zapSetup.contextName)
-    zapScan.runAndCheckStatusOfActiveScan(zapSetup.contextId, zapSetup.policyName)
-  }
-
-  private def verifyAlerts(): Unit = {
     val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
     if (!ZapTestStatus.isTestSucceeded(relevantAlerts, zapConfiguration.failureThreshold)) {
       throw ZapException(s"Zap found some new alerts - see link to HMTL report above!")
     }
   }
 
+  override def afterAll(): Unit = {
+    createTestReport()
+
+    if (zapConfiguration.debugTearDown) {
+      log.debug(s"Removing ZAP Context (${zapContext.name}) Policy (${zapContext.policy}), and all alerts.")
+      new ZapTearDown(owaspZap).removeZapSetup
+    } else {
+      log.debug("Skipping Tear Down")
+    }
+  }
+
+  private def createTestReport(): Unit = {
+    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
+    writeToFile(generateHtmlReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold,
+      zapScan.spiderRunStatus, zapScan.activeScanStatus))
+  }
 }
 

@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.zap
 
-import uk.gov.hmrc.utils.{HttpClient, WsClient, ZapConfiguration}
+import uk.gov.hmrc.zap.client.{HttpClient, WsClient}
+import uk.gov.hmrc.zap.config.ZapConfiguration
 
 
 class OwaspZap(val zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) {

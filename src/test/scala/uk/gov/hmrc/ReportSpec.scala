@@ -18,9 +18,10 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import play.api.libs.json.{Json, Reads}
-import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
 import uk.gov.hmrc.zap.ZapAlert
 import uk.gov.hmrc.zap.ZapReport._
+import uk.gov.hmrc.zap.client.HttpClient
+import uk.gov.hmrc.zap.config.ZapConfiguration
 
 import scala.xml.{Elem, Node, NodeSeq, XML}
 

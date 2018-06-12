@@ -19,7 +19,8 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito.when
 import play.api.libs.json.{Json, Reads}
-import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
+import uk.gov.hmrc.zap.client.HttpClient
+import uk.gov.hmrc.zap.config.ZapConfiguration
 import uk.gov.hmrc.zap.{OwaspZap, ZapAlert, ZapException}
 
 class OwaspZapSpec extends BaseSpec {

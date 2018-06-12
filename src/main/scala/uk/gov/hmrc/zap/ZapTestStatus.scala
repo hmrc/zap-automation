@@ -15,11 +15,6 @@
  */
 
 package uk.gov.hmrc.zap
-import uk.gov.hmrc.utils.ZapLogger._
-
-class ZapTestStatus {
-
-}
 
 object ZapTestStatus {
 
@@ -31,7 +26,6 @@ object ZapTestStatus {
       case "Low" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
       case _ => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
     }
-    logger.info(s"failingAlerts: $failingAlerts")
     failingAlerts.isEmpty
   }
 }

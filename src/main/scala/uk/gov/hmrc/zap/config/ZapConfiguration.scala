@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap.config
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import uk.gov.hmrc.utils.ZapLogger._
+import uk.gov.hmrc.zap.logger.ZapLogger._
 
 import scala.collection.JavaConversions._
 
@@ -27,12 +27,12 @@ class ZapConfiguration(userConfig: Config) {
 
   if (zapConfig.getBoolean("debug.printConfig")) {
     val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
-    logger.info(s"Below Config is used by Zap Automation Library \n" +
+    log.info(s"Below Config is used by Zap Automation Library \n" +
       zapConfig.root().render(renderOpts))
   }
 
   if(!debugHealthCheck){
-    logger.warn("Health Checking Test Url is disabled. This may result in incorrect test result.")
+    log.warn("Health Checking Test Url is disabled. This may result in incorrect test result.")
   }
 
   def activeScan: Boolean = zapConfig.getBoolean("activeScan")

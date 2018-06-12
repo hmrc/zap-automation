@@ -19,8 +19,9 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito.{verify, when}
-import uk.gov.hmrc.utils.{HttpClient, ZapConfiguration}
-import uk.gov.hmrc.zap.{OwaspZap, ZapSetUp}
+import uk.gov.hmrc.zap.client.HttpClient
+import uk.gov.hmrc.zap.config.ZapConfiguration
+import uk.gov.hmrc.zap.{OwaspZap, ZapContext, ZapSetUp}
 
 class ZapSetupSpec extends BaseSpec {
 
@@ -32,12 +33,12 @@ class ZapSetupSpec extends BaseSpec {
     val zapSetUp = new ZapSetUp(owaspZap)
   }
 
-  "createContext" should {
+  "initialize Zap setup" should {
 
-    "create a Zap context" in new TestSetup {
+    "create a Zap context and policy" in new TestSetup {
       when(httpClient.get(any(), any(), any())).thenReturn((200, "{\n\"contextId\": \"2\"\n}"))
-      zapSetUp.createContext()
-      zapSetUp.contextId shouldBe "2"
+      val zapContext: ZapContext = zapSetUp.initialize()
+      zapContext.id shouldBe "2"
     }
   }
 
@@ -54,17 +55,6 @@ class ZapSetupSpec extends BaseSpec {
       verify(httpClient).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> contextName, "regex" -> contextBaseUrl)
       verify(httpClient).get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> contextName)
       verify(httpClient).get(zapBaseUrl, "/json/context/action/includeContextTechnologies", "contextName" -> contextName, "technologyNames" -> desiredTechnologyNames)
-    }
-  }
-
-  "createPolicy" should {
-
-    "create a policy in Zap " in new TestSetup {
-      when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
-
-      zapSetUp.createPolicy()
-
-      verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/ascan/action/addScanPolicy", "scanPolicyName" -> zapSetUp.policyName)
     }
   }
 
@@ -90,5 +80,4 @@ class ZapSetupSpec extends BaseSpec {
       verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/enableScanners"), any())
     }
   }
-
 }

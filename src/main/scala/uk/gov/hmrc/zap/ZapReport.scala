@@ -18,7 +18,7 @@ package uk.gov.hmrc.zap
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import uk.gov.hmrc.utils.ZapLogger._
+import uk.gov.hmrc.zap.logger.ZapLogger._
 
 object ZapReport {
 
@@ -35,6 +35,6 @@ object ZapReport {
     val writer = new BufferedWriter(new FileWriter(file))
     writer.write(report)
     writer.close()
-    logger.info(s"HTML Report generated: file://${file.getAbsolutePath}")
+    log.info(s"HTML Report generated: file://${file.getAbsolutePath}")
   }
 }

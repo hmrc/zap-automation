@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap.logger
 
 import org.slf4j.{Logger, LoggerFactory}
 
 object ZapLogger {
 
-  val logger: Logger = LoggerFactory.getLogger("[ZAP Logger]")
+  val log: Logger = LoggerFactory.getLogger("[ZAP Logger]")
 
 }

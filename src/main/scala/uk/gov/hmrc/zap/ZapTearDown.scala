@@ -16,17 +16,14 @@
 
 package uk.gov.hmrc.zap
 
-class ZapTearDown(owaspZap: OwaspZap, zapSetUp: ZapSetUp) {}
+class ZapTearDown(owaspZap: OwaspZap) {
 
-object ZapTearDown {
-
-
-  def apply(owaspZap: OwaspZap, zapSetUp: ZapSetUp) = {
+  def removeZapSetup(implicit context: ZapContext): Unit = {
 
     import owaspZap._
 
-    callZapApi("/json/context/action/removeContext", "contextName" -> zapSetUp.contextName)
-    callZapApi("/json/ascan/action/removeScanPolicy", "scanPolicyName" -> zapSetUp.policyName)
+    callZapApi("/json/context/action/removeContext", "contextName" -> context.name)
+    callZapApi("/json/ascan/action/removeScanPolicy", "scanPolicyName" -> context.policy)
     callZapApi("/json/core/action/deleteAllAlerts")
   }
 }

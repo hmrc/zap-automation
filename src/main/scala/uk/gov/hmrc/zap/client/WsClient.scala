@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap.client
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import play.api.libs.ws.WSResponse
-import play.api.libs.ws.ahc.AhcWSClient
+import play.api.libs.ws.ahc.StandaloneAhcWSClient
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -33,19 +32,19 @@ trait HttpClient {
 
 object WsClient extends HttpClient {
 
-  def asyncClient: AhcWSClient = {
+  def asyncClient: StandaloneAhcWSClient = {
     implicit val system: ActorSystem = ActorSystem()
     implicit val materializer: ActorMaterializer = ActorMaterializer()
-    AhcWSClient()
+    StandaloneAhcWSClient()
   }
 
   def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String) = {
 
     val url = s"$zapBaseUrl$queryPath"
     val client = asyncClient
-    val response: WSResponse = Await.result(client.url(s"$url")
-      .withHeaders("ContentType" -> "application/json;charset=utf-8")
-      .withQueryString(params: _*)
+    val response = Await.result(client.url(s"$url")
+        .withHttpHeaders("ContentType" -> "application/json;charset=utf-8")
+      .withQueryStringParameters(params: _*)
       .get(), 60 seconds)
 
     client.close()

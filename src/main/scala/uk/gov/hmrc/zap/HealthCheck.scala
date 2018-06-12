@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.zap
 
-import uk.gov.hmrc.utils.ZapLogger.logger
-import uk.gov.hmrc.utils.{HttpClient, WsClient}
+import uk.gov.hmrc.zap.client.{HttpClient, WsClient}
+import uk.gov.hmrc.zap.logger.ZapLogger._
 
 import scala.util.control.NonFatal
 
@@ -30,7 +30,7 @@ trait HealthCheck {
     val healthCheckHost = localHostRegex.findFirstIn(localHostUrl).get
     val healthCheckUrl = s"$healthCheckHost/ping/ping"
 
-    logger.info(s"Performing health check for the test URL with: $healthCheckUrl")
+    log.info(s"Performing health check for the test URL with: $healthCheckUrl")
 
     val (status, _) = try {
       httpClient.get(healthCheckHost, "/ping/ping")
