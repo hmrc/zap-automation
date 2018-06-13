@@ -17,9 +17,9 @@
 package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
-import uk.gov.hmrc.zap.client.HttpClient
+import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
-import uk.gov.hmrc.zap.{OwaspZap, ZapAlert, ZapTestStatus}
+import uk.gov.hmrc.zap.{ZapAlert, ZapTestStatus}
 
 class ZapTestStatusSpec extends BaseSpec {
 
@@ -27,7 +27,7 @@ class ZapTestStatusSpec extends BaseSpec {
     val httpClient: HttpClient = mock[HttpClient]
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     val zapConfiguration = new ZapConfiguration(config)
-    val owaspZap = new OwaspZap(zapConfiguration, httpClient)
+    val zapClient = new ZapClient(zapConfiguration, httpClient)
   }
 
   "Zap Test" should {

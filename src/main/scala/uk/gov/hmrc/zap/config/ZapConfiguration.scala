@@ -31,7 +31,7 @@ class ZapConfiguration(userConfig: Config) {
       zapConfig.root().render(renderOpts))
   }
 
-  if(!debugHealthCheck){
+  if (!debugHealthCheck) {
     log.warn("Health Checking Test Url is disabled. This may result in incorrect test result.")
   }
 

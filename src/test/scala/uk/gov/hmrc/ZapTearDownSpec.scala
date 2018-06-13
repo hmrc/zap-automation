@@ -19,8 +19,8 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito.{verify, when}
-import uk.gov.hmrc.zap._
-import uk.gov.hmrc.zap.client.HttpClient
+import uk.gov.hmrc.zap.api.{ZapContext, ZapSetUp, ZapTearDown}
+import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
 class ZapTearDownSpec extends BaseSpec {
@@ -29,8 +29,8 @@ class ZapTearDownSpec extends BaseSpec {
     val httpClient: HttpClient = mock[HttpClient]
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     val zapConfiguration = new ZapConfiguration(config)
-    val owaspZap = new OwaspZap(zapConfiguration, httpClient)
-    val zapSetUp = new ZapSetUp(owaspZap)
+    val zapClient = new ZapClient(zapConfiguration, httpClient)
+    val zapSetUp = new ZapSetUp(zapClient)
   }
 
   "tearDown" should {
@@ -42,7 +42,7 @@ class ZapTearDownSpec extends BaseSpec {
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      new ZapTearDown(owaspZap).removeZapSetup
+      new ZapTearDown(zapClient).removeZapSetup
       verify(httpClient).get(zapBaseUrl, "/json/context/action/removeContext", "contextName" -> zapContext.name)
       verify(httpClient).get(zapBaseUrl, "/json/ascan/action/removeScanPolicy", "scanPolicyName" -> zapContext.policy)
       verify(httpClient).get(eqTo(zapBaseUrl), eqTo("/json/core/action/deleteAllAlerts"), any())

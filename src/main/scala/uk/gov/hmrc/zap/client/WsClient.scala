@@ -43,7 +43,7 @@ object WsClient extends HttpClient {
     val url = s"$zapBaseUrl$queryPath"
     val client = asyncClient
     val response = Await.result(client.url(s"$url")
-        .withHttpHeaders("ContentType" -> "application/json;charset=utf-8")
+      .withHttpHeaders("ContentType" -> "application/json;charset=utf-8")
       .withQueryStringParameters(params: _*)
       .get(), 60 seconds)
 

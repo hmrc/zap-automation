@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.zap
+package uk.gov.hmrc.zap.api
 
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.libs.json.Json
+import uk.gov.hmrc.zap.ZapException
+import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.logger.ZapLogger.log
 
-class ZapScan(owaspZap: OwaspZap) extends Eventually {
+class ZapScan(zapClient: ZapClient) extends Eventually {
 
-  import owaspZap._
-  import owaspZap.zapConfiguration._
+  import zapClient._
+  import zapClient.zapConfiguration._
 
 
   implicit override val patienceConfig =

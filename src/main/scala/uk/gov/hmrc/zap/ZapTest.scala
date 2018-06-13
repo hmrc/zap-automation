@@ -18,6 +18,8 @@ package uk.gov.hmrc.zap
 
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import uk.gov.hmrc.zap.ZapReport._
+import uk.gov.hmrc.zap.api._
+import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.config.ZapConfiguration
 import uk.gov.hmrc.zap.logger.ZapLogger._
 
@@ -27,10 +29,10 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
 
   val zapConfiguration: ZapConfiguration
 
-  private lazy val owaspZap = new OwaspZap(zapConfiguration)
-  private lazy val zapScan = new ZapScan(owaspZap)
-  private lazy val zapAlerts = new ZapAlerts(owaspZap)
-  private lazy val zapSetup = new ZapSetUp(owaspZap)
+  private lazy val zapClient = new ZapClient(zapConfiguration)
+  private lazy val zapSetup = new ZapSetUp(zapClient)
+  private lazy val zapScan = new ZapScan(zapClient)
+  private lazy val zapAlerts = new ZapAlerts(zapClient)
 
   private implicit lazy val zapContext: ZapContext = zapSetup.initialize()
 
@@ -54,9 +56,9 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
     createTestReport()
 
     if (zapConfiguration.debugTearDown) {
-      log.debug(s"Removing ZAP Context (${zapContext.name}) Policy (${zapContext.policy}), and all alerts.")
-      new ZapTearDown(owaspZap).removeZapSetup
-    } else {
+      new ZapTearDown(zapClient).removeZapSetup
+    }
+    else {
       log.debug("Skipping Tear Down")
     }
   }

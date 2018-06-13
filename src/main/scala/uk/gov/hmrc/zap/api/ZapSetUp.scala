@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.zap
+package uk.gov.hmrc.zap.api
 
 import java.util.UUID
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.logger.ZapLogger.log
 
-class ZapSetUp(owaspZap: OwaspZap) {
+class ZapSetUp(zapClient: ZapClient) {
 
-  import owaspZap._
-  import owaspZap.zapConfiguration._
+  import zapClient._
+  import zapClient.zapConfiguration._
 
   def initialize(): ZapContext = {
 
     val contextName = UUID.randomUUID.toString
     val policyName = UUID.randomUUID.toString
 
-    owaspZap.callZapApi("/json/ascan/action/addScanPolicy", "scanPolicyName" -> policyName)
+    callZapApi("/json/ascan/action/addScanPolicy", "scanPolicyName" -> policyName)
     setUpPolicy(policyName)
 
     val response: String = callZapApi("/json/context/action/newContext", "contextName" -> contextName)

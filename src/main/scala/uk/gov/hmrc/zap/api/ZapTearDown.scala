@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.zap
+package uk.gov.hmrc.zap.api
 
-import uk.gov.hmrc.zap.client.{HttpClient, WsClient}
-import uk.gov.hmrc.zap.config.ZapConfiguration
+import uk.gov.hmrc.zap.client.ZapClient
+import uk.gov.hmrc.zap.logger.ZapLogger.log
 
+class ZapTearDown(zapClient: ZapClient) {
 
-class OwaspZap(val zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) {
+  def removeZapSetup(implicit context: ZapContext): Unit = {
 
-  def callZapApi(queryPath: String, params: (String, String)*): String = {
+    import zapClient._
 
-    val (status, response) = httpClient.get(zapConfiguration.zapBaseUrl, queryPath, params: _*)
+    log.debug(s"Removing ZAP Context (${context.name}) Policy (${context.policy}), and all alerts.")
 
-    if (status != 200) {
-      throw ZapException(s"Expected response code is 200 for $queryPath, received:$status")
-    }
-    response
+    callZapApi("/json/context/action/removeContext", "contextName" -> context.name)
+    callZapApi("/json/ascan/action/removeScanPolicy", "scanPolicyName" -> context.policy)
+    callZapApi("/json/core/action/deleteAllAlerts")
   }
 }

@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.zap
+package uk.gov.hmrc.zap.api
 
 import com.typesafe.config.Config
 import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.zap.client.ZapClient
+import uk.gov.hmrc.zap.{ZapAlert, ZapAlertFilter}
 
 import scala.collection.mutable.ListBuffer
 
 
-class ZapAlerts(owaspZap: OwaspZap) {
+class ZapAlerts(zapClient: ZapClient) {
 
-  import owaspZap._
-  import owaspZap.zapConfiguration._
+  import zapClient._
+  import zapClient.zapConfiguration._
 
   implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
 

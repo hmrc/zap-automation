@@ -22,9 +22,9 @@ import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.exceptions.TestFailedDueToTimeoutException
-import uk.gov.hmrc.zap.client.HttpClient
+import uk.gov.hmrc.zap.api.{ZapContext, ZapScan}
+import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
-import uk.gov.hmrc.zap.{OwaspZap, ZapContext, ZapScan}
 
 class ZapScanSpec extends BaseSpec {
 
@@ -34,8 +34,8 @@ class ZapScanSpec extends BaseSpec {
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
 
     val zapConfiguration = new ZapConfiguration(config)
-    val owaspZap = new OwaspZap(zapConfiguration, httpClient)
-    val zapScan = new ZapScan(owaspZap)
+    val zapClient = new ZapClient(zapConfiguration, httpClient)
+    val zapScan = new ZapScan(zapClient)
   }
 
   private val jsonStatus = """{"status": "100"}"""

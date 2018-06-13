@@ -19,9 +19,10 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
-import uk.gov.hmrc.zap.client.HttpClient
+import uk.gov.hmrc.zap.ZapAlert
+import uk.gov.hmrc.zap.api.ZapAlerts
+import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
-import uk.gov.hmrc.zap.{OwaspZap, ZapAlert, ZapAlerts}
 
 class AlertsSpec extends BaseSpec {
 
@@ -29,8 +30,8 @@ class AlertsSpec extends BaseSpec {
     val httpClient: HttpClient = mock[HttpClient]
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     val zapConfiguration = new ZapConfiguration(config)
-    val owaspZap = new OwaspZap(zapConfiguration, httpClient)
-    val zapAlerts = new ZapAlerts(owaspZap)
+    val zapClient = new ZapClient(zapConfiguration, httpClient)
+    val zapAlerts = new ZapAlerts(zapClient)
   }
 
   "filterAlerts" should {
