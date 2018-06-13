@@ -1,6 +1,7 @@
-@import uk.gov.hmrc.zap.ZapAlert
+@import uk.gov.hmrc.zap.api.ZapAlert
+@import uk.gov.hmrc.zap.api.Status.Value
 
-@(alerts: List[ZapAlert], failureThreshold: String, spiderScanCompleted: Boolean, activeScanCompleted: Boolean)
+@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: Value, activeScanStatus: Value)
 
 <html>
     <head>
@@ -101,10 +102,10 @@
                 <td>Passive</td><td id="passive-scan" align="center">Run</td>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td>Spider</td><td id="spider-scan" align="center">@{if (spiderScanCompleted) {"Run"} else {"Not Run"}}</td>
+                <td>Spider</td><td id="spider-scan" align="center">@{spiderScanStatus.toString}</td>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td>Active</td><td id="active-scan" align="center">@{if (activeScanCompleted) {"Run"} else {"Not Run"}}</td>
+                <td>Active</td><td id="active-scan" align="center">@{activeScanStatus.toString}</td>
             </tr>
         </table>
         <div class="spacer-lg"></div>

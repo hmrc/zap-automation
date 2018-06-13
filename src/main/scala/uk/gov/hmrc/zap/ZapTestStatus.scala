@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.zap
 
+import uk.gov.hmrc.zap.api.ZapAlert
+
 object ZapTestStatus {
 
   def isTestSucceeded(relevantAlerts: List[ZapAlert], failureThreshold: String): Boolean = {

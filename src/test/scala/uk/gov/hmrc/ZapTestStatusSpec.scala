@@ -19,7 +19,8 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
-import uk.gov.hmrc.zap.{ZapAlert, ZapTestStatus}
+import uk.gov.hmrc.zap.ZapTestStatus
+import uk.gov.hmrc.zap.api.ZapAlert
 
 class ZapTestStatusSpec extends BaseSpec {
 

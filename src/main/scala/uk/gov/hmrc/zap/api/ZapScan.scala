@@ -27,7 +27,7 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
 
   import zapClient._
   import zapClient.zapConfiguration._
-
+  import Status._
 
   implicit override val patienceConfig =
     PatienceConfig(timeout = scaled(Span(patienceConfigTimeout, Seconds)), interval = scaled(Span(500, Millis)))
@@ -39,7 +39,7 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
     }
   }
 
-  def spiderRunStatus: Boolean = {
+  def spiderRunStatus: Value = {
     hasCallCompleted("/json/spider/view/status")
   }
 
@@ -55,21 +55,26 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
       log.info(s"Skipping Active Scan")
   }
 
-  def activeScanStatus: Boolean = {
+  def activeScanStatus: Value = {
     if (activeScan) {
       hasCallCompleted("/json/spider/view/status")
     }
     else
-      false
+      NotRun
   }
 
-  private def hasCallCompleted(path: String): Boolean = {
+  private def hasCallCompleted(path: String): Value = {
     val jsonResponse = Json.parse(callZapApi(path))
     val status = (jsonResponse \ "status").as[String]
     if (status != "100") {
       throw ZapException(s"Request to path $path failed to return 100% complete.")
     }
-    true
+    Run
   }
 
+}
+
+object Status extends Enumeration {
+  val Run = Value("Run")
+  val NotRun = Value("Not Run")
 }

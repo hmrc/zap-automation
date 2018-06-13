@@ -19,12 +19,11 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
-import uk.gov.hmrc.zap.ZapAlert
-import uk.gov.hmrc.zap.api.ZapAlerts
+import uk.gov.hmrc.zap.api.{ZapAlert, ZapAlerts}
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
-class AlertsSpec extends BaseSpec {
+class ZapAlertsSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]

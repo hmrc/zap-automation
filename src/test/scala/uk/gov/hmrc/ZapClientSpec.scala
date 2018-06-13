@@ -18,22 +18,17 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito.when
-import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.zap.ZapException
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
-import uk.gov.hmrc.zap.{ZapAlert, ZapException}
 
 class ZapClientSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
-
-    implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
     lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-
     val zapConfiguration = new ZapConfiguration(config)
     val zapApi = new ZapClient(zapConfiguration, httpClient)
-
   }
 
 

@@ -19,7 +19,6 @@ package uk.gov.hmrc.zap.api
 import com.typesafe.config.Config
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.zap.client.ZapClient
-import uk.gov.hmrc.zap.{ZapAlert, ZapAlertFilter}
 
 import scala.collection.mutable.ListBuffer
 
@@ -59,3 +58,54 @@ class ZapAlerts(zapClient: ZapClient) {
     listBuffer.toList
   }
 }
+
+case class ZapAlert(other: String = "",
+                    method: String = "",
+                    evidence: String = "",
+                    pluginId: String = "",
+                    cweid: String,
+                    confidence: String = "",
+                    wascid: String = "",
+                    description: String = "",
+                    messageId: String = "",
+                    url: String,
+                    reference: String = "",
+                    solution: String = "",
+                    alert: String = "",
+                    param: String = "",
+                    attack: String = "",
+                    name: String = "",
+                    risk: String = "",
+                    id: String = "") {
+
+  def riskShortName():String = {
+    if (risk == "Informational") "Info"
+    else risk
+  }
+
+  def references(): List[String] = {
+    reference.split("\\n").toList
+  }
+
+  def severityScore(): String = {
+    s"${riskCodes(risk)}-${confidenceCodes(confidence)}"
+  }
+
+  val riskCodes = Map("High"->"1",
+    "Medium"->"2",
+    "Low"->"3",
+    "Informational"->"4")
+
+  val confidenceCodes = Map("High"->"1",
+    "Medium"->"2",
+    "Low"->"3")
+}
+
+
+case class ZapAlertFilter(cweid: String, url: String) {
+  def matches(zapAlert: ZapAlert): Boolean = {
+    zapAlert.url.matches(url) && zapAlert.cweid.equals(cweid)
+  }
+}
+
+
