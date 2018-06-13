@@ -41,22 +41,23 @@ class ZapScanSpec extends BaseSpec {
   "runAndCheckStatusOfSpider" should {
 
     "should trigger the spider scan" in new TestSetup {
-      val contextName = "context1"
-
       import zapConfiguration._
+
+      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
-      zapScan.runAndCheckStatusOfSpider(contextName)
-      verify(httpClient).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> contextName, "url" -> testUrl)
+      zapScan.runAndCheckStatusOfSpider
+      verify(httpClient).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
       verify(httpClient).get(zapBaseUrl, "/json/spider/view/status")
     }
 
     "should fail if spider is not completed within the configured time" in new TestSetup with Eventually {
-      val contextName = "context1"
+      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
+
       when(httpClient.get(any(), any(), any())).thenReturn((200, """{"status": "99"}"""))
 
-      intercept[TestFailedDueToTimeoutException](zapScan.runAndCheckStatusOfSpider(contextName))
+      intercept[TestFailedDueToTimeoutException](zapScan.runAndCheckStatusOfSpider)
     }
   }
 
@@ -75,7 +76,6 @@ class ZapScanSpec extends BaseSpec {
     }
 
     "should not call Zap API to run the active scan if activeScan config is set to false" in new TestSetup {
-
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))

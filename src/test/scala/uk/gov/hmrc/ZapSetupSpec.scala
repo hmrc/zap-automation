@@ -45,37 +45,38 @@ class ZapSetupSpec extends BaseSpec {
   "setUpContext" should {
 
     "set up the context for a given context name " in new TestSetup {
-      val contextName = "context1"
-
       import zapConfiguration._
+
+      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      zapSetUp.setUpContext(contextName)
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> contextName, "regex" -> contextBaseUrl)
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> contextName)
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeContextTechnologies", "contextName" -> contextName, "technologyNames" -> desiredTechnologyNames)
+      zapSetUp.setUpContext
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> zapContext.name, "regex" -> contextBaseUrl)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> zapContext.name)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeContextTechnologies", "contextName" -> zapContext.name, "technologyNames" -> desiredTechnologyNames)
     }
   }
 
   "setUpPolicy" should {
 
     "set up the policy with scanners meant for UI testing" in new TestSetup {
+      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      zapSetUp.setUpPolicy("policyName")
+      zapSetUp.setUpPolicy
       verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/disableScanners"), any())
 
     }
 
     "call the Zap API to set up the policy with scanners meant for API testing" in new TestSetup {
-
       override lazy val config: Config = updateTestConfigWith("testingAnApi=true")
+      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
-      zapSetUp.setUpPolicy("policyName")
+      zapSetUp.setUpPolicy
       verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/disableAllScanners"), any())
       verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/enableScanners"), any())
     }

@@ -40,10 +40,12 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
     if (zapConfiguration.debugHealthCheck) {
       healthCheck(zapConfiguration.testUrl)
     }
+    zapSetup.setUpPolicy
+    zapSetup.setUpContext
   }
 
   def triggerZapScan(): Unit = {
-    zapScan.runAndCheckStatusOfSpider(zapContext.name)
+    zapScan.runAndCheckStatusOfSpider
     zapScan.runAndCheckStatusOfActiveScan
 
     val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
