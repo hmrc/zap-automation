@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.zap
+package uk.gov.hmrc.zap.logger
 
-case class ZapAlertFilter(cweid: String, url: String) {
-  def matches(zapAlert: ZapAlert): Boolean = {
-    zapAlert.url.matches(url) && zapAlert.cweid.equals(cweid)
-  }
+import org.slf4j.{Logger, LoggerFactory}
+
+object ZapLogger {
+
+  val log: Logger = LoggerFactory.getLogger("[ZAP Logger]")
+
 }

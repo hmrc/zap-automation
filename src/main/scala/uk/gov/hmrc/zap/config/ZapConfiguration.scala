@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap.config
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import uk.gov.hmrc.zap.logger.ZapLogger._
 
 import scala.collection.JavaConversions._
 
+class ZapConfiguration(userConfig: Config) {
 
-object ZapConfiguration extends ZapLogger{
+  lazy val zapConfig: Config = userConfig.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
 
-  var zapConfig: Config = ConfigFactory.load().getConfig("zap-automation-config")
-
-  /*
-   * Call to inject project specific configuration
-   */
-  def withConfig(config: Config): Unit = {
-    zapConfig = config.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
+  if (zapConfig.getBoolean("debug.printConfig")) {
+    val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
+    log.info(s"Below Config is used by Zap Automation Library \n" +
+      zapConfig.root().render(renderOpts))
   }
 
-  def printConfig(): Unit = {
-    if (zapConfig.getBoolean("debug.printConfig")) {
-      val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
-      logger.info(s"Below Config is used by Zap Automation Library \n" +
-        zapConfig.root().render(renderOpts))
-    }
+  if (!debugHealthCheck) {
+    log.warn("Health Checking Test Url is disabled. This may result in incorrect test result.")
   }
 
   def activeScan: Boolean = zapConfig.getBoolean("activeScan")
@@ -65,5 +60,7 @@ object ZapConfiguration extends ZapLogger{
   def debugHealthCheck: Boolean = zapConfig.getBoolean("debug.healthCheck")
 
   def debugTearDown: Boolean = zapConfig.getBoolean("debug.tearDown")
+
+  def patienceConfigTimeout: Int = zapConfig.getInt("debug.patienceConfigTimeout")
 
 }

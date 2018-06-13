@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap
 
-object FixedDelay {
-
-  def apply(millis: Long): Unit = concurrent.blocking(Thread.sleep(millis))
-
-}
+case class ZapException(s: String) extends Exception(s)

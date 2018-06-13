@@ -14,7 +14,50 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.zap
+package uk.gov.hmrc.zap.api
+
+import com.typesafe.config.Config
+import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.zap.client.ZapClient
+
+import scala.collection.mutable.ListBuffer
+
+
+class ZapAlerts(zapClient: ZapClient) {
+
+  import zapClient._
+  import zapClient.zapConfiguration._
+
+  implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
+
+  def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
+    val relevantAlerts = allAlerts.filterNot { zapAlert =>
+      alertsToIgnore().exists(f => f.matches(zapAlert))
+    }
+
+    if (ignoreOptimizelyAlerts)
+      relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
+    else
+      relevantAlerts
+  }
+
+
+  def parsedAlerts: List[ZapAlert] = {
+    val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> alertsBaseUrl)
+    val jsonResponse = Json.parse(response)
+    (jsonResponse \ "alerts").as[List[ZapAlert]]
+  }
+
+  def alertsToIgnore(): List[ZapAlertFilter] = {
+    val listOfAlerts: List[Config] = zapConfiguration.alertsToIgnore
+    val listBuffer: ListBuffer[ZapAlertFilter] = new ListBuffer[ZapAlertFilter]
+
+    listOfAlerts.foreach { af: Config =>
+      listBuffer.append(ZapAlertFilter(af.getString("cweid"), af.getString("url")))
+    }
+    listBuffer.toList
+  }
+}
 
 case class ZapAlert(other: String = "",
                     method: String = "",
@@ -49,12 +92,20 @@ case class ZapAlert(other: String = "",
   }
 
   val riskCodes = Map("High"->"1",
-                      "Medium"->"2",
-                      "Low"->"3",
-                      "Informational"->"4")
+    "Medium"->"2",
+    "Low"->"3",
+    "Informational"->"4")
 
   val confidenceCodes = Map("High"->"1",
-                            "Medium"->"2",
-                            "Low"->"3")
+    "Medium"->"2",
+    "Low"->"3")
 }
+
+
+case class ZapAlertFilter(cweid: String, url: String) {
+  def matches(zapAlert: ZapAlert): Boolean = {
+    zapAlert.url.matches(url) && zapAlert.cweid.equals(cweid)
+  }
+}
+
 

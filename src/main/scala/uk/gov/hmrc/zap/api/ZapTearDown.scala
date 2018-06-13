@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap.api
 
-class TestHelper
+import uk.gov.hmrc.zap.client.ZapClient
+import uk.gov.hmrc.zap.logger.ZapLogger.log
 
-object TestHelper {
+class ZapTearDown(zapClient: ZapClient) {
 
-  def waitForCondition(condition: => Boolean, exceptionMessage: String, timeoutInSeconds: Int = 5) {
-    val endTime = System.currentTimeMillis + timeoutInSeconds * 1000
-    while (System.currentTimeMillis < endTime) {
-      if (condition) {
-        return
-      }
-      FixedDelay(100)
-    }
-    throw new Exception(exceptionMessage)
+  def removeZapSetup(implicit context: ZapContext): Unit = {
+
+    import zapClient._
+
+    log.debug(s"Removing ZAP Context (${context.name}) Policy (${context.policy}), and all alerts.")
+
+    callZapApi("/json/context/action/removeContext", "contextName" -> context.name)
+    callZapApi("/json/ascan/action/removeScanPolicy", "scanPolicyName" -> context.policy)
+    callZapApi("/json/core/action/deleteAllAlerts")
   }
-
 }

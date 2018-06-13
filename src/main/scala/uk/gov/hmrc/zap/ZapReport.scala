@@ -18,12 +18,14 @@ package uk.gov.hmrc.zap
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import uk.gov.hmrc.utils.ZapConfiguration.logger
+import uk.gov.hmrc.zap.api.Status.Value
+import uk.gov.hmrc.zap.api.ZapAlert
+import uk.gov.hmrc.zap.logger.ZapLogger._
 
 object ZapReport {
 
-  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String, spiderScanCompleted: Boolean, activeScanCompleted: Boolean): String = {
-    report.html.index(relevantAlerts, failureThreshold, spiderScanCompleted, activeScanCompleted).toString()
+  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: Value, activeScanStatus: Value): String = {
+    report.html.index(relevantAlerts, failureThreshold, spiderScanStatus, activeScanStatus).toString()
   }
 
   def writeToFile(report: String): Unit = {
@@ -35,6 +37,6 @@ object ZapReport {
     val writer = new BufferedWriter(new FileWriter(file))
     writer.write(report)
     writer.close()
-    logger.info(s"HTML Report generated: file://${file.getAbsolutePath}")
+    log.info(s"HTML Report generated: file://${file.getAbsolutePath}")
   }
 }

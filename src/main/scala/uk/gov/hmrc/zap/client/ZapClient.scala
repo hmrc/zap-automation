@@ -14,12 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.utils
+package uk.gov.hmrc.zap.client
 
-import org.slf4j.{Logger, LoggerFactory}
+import uk.gov.hmrc.zap.ZapException
+import uk.gov.hmrc.zap.config.ZapConfiguration
 
-trait ZapLogger {
 
-  val logger: Logger = LoggerFactory.getLogger("[ZAP Logger]")
+class ZapClient(val zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) {
 
+  def callZapApi(queryPath: String, params: (String, String)*): String = {
+
+    val (status, response) = httpClient.get(zapConfiguration.zapBaseUrl, queryPath, params: _*)
+
+    if (status != 200) {
+      throw ZapException(s"Expected response code is 200 for $queryPath, received:$status")
+    }
+    response
+  }
 }

@@ -16,28 +16,15 @@
 
 package uk.gov.hmrc
 
-import com.typesafe.config.ConfigFactory
-import org.mockito.Mockito
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterEach, FunSpec, Matchers}
-import uk.gov.hmrc.utils.HttpClient
-import uk.gov.hmrc.utils.ZapConfiguration._
-import uk.gov.hmrc.zap.ZapApi._
+import org.scalatest.{Matchers, WordSpec}
 
 
+class BaseSpec extends WordSpec with Matchers with MockitoSugar {
 
-class BaseSpec extends FunSpec with Matchers with MockitoSugar with BeforeAndAfterEach {
-
-  val wsClientMock: HttpClient = mock[HttpClient]
-
-  httpClient = wsClientMock
-
-  override protected def beforeEach(): Unit = {
-    Mockito.reset(wsClientMock)
-  }
-
-  def updateTestConfigWith(config: String): Unit = {
-    zapConfig =  ConfigFactory.parseString(config).
+  def updateTestConfigWith(config: String): Config = {
+    ConfigFactory.parseString(config).
       withFallback(
         ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
       )
