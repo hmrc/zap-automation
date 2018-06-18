@@ -14,10 +14,10 @@ The library provides an interface to Zap's API to configure, run and report secu
 
 ### How to use the library
 
-### Prerequisites
+#### Prerequisites
 You will need to have an automated UI or API tests for your services to implement this library.
 
-### Key Terminologies
+#### Key Terminologies
 
 ##### Policy 
 Policy defines the rules required for active scan. The library sets up a policy with the scanners to be used during an
@@ -44,9 +44,9 @@ Active scan is an invasive attack. During active scan ZAP manipulates the reques
   By default Active Scan is turned off in zap-automation library. Teams interested in running an active scan using this library should set
   activeScan:true in their application.conf. See [active scan](https://github.com/zaproxy/zap-core-help/wiki/HelpStartConceptsAscan) for more information.
 
-### To use zap-automation library in your tests 
+#### To use zap-automation library in your tests: 
 
-###### In your SBT build add:
+##### In your SBT build add:
 
 ```scala
 resolvers += Resolver.bintrayRepo("hmrc", "releases")
@@ -54,24 +54,25 @@ resolvers += Resolver.bintrayRepo("hmrc", "releases")
 libraryDependencies += "uk.gov.hmrc" %% "zap-automation" % "x.x.x"
 ```
 
-######  Create a config:
+#####  Create a config:
 
-In your test suite's application.conf create a zap-config object as shown in the example here. If you have multiple 
-security tests as part of the same suite and use different config for each of them, then refer to this example here.
+In your test suite's application.conf create a zap-config object as shown in the example [here](examples/singleConfigExample/resources/singleConfigExampleApplication.conf). If you have multiple 
+security tests as part of the same suite and use different config for each of them, then refer to this example [here](examples/multipleConfigExample/resources/multipleConfigExampleApplication.conf).
   
-######  Create a Zap Runner:
+#####  Create a Zap Runner:
 
 Create a runner in your test suite by extending the ZapTest trait of the zap-automation library. The runner is required 
 to extend a testSuite. This can be done by extending any of ScalaTest's [testing styles](http://www.scalatest.org/user_guide/selecting_a_style). 
 The Zap runner is also expected to override the ZapConfiguration and call the triggerZapScan() method to trigger the scan.
- A detailed example is available here.
+A detailed example is available [here](examples/singleConfigExample/SingleConfigExampleRunner.scala).
 
-### Introduce your application to ZAP
+#### Introduce your application to ZAP:
+
 For Zap to check security vulnerabilities of your application, it needs to know the various endpoints and flow of the application. 
 This can be achieved by using Zap as a proxying tool. When the Application Under Test uses Zap to proxy its requests, 
- Zap performs a non invasive passive scan checking for for vulnerabilities. To achieve this configure your test suite to proxy via Zap
- by creating a new browser profile for ZAP in your test suite and specifying zap proxy details. This can be done
-  as below for firefox and chrome respectively:
+Zap performs a non invasive passive scan checking for for vulnerabilities. To achieve this configure your test suite to proxy via Zap
+by creating a new browser profile for ZAP in your test suite and specifying zap proxy details. This can be done
+as below for firefox and chrome respectively:
    
    ```scala
        val profile: FirefoxProfile = new FirefoxPrfile
@@ -89,46 +90,7 @@ This can be achieved by using Zap as a proxying tool. When the Application Under
 //       TODO: Add proxy details for API
    ``` 
 
-
-
-* You’ll need to be able to create a new browser profile for ZAP, and switch your browser to this new profile. We’ve done this using this code:
-
-```scala
-  def createZapDriver: WebDriver = {
-    val profile: FirefoxProfile = new FirefoxProfile
-    profile.setAcceptUntrustedCertificates(true)
-    profile.setPreference("network.proxy.type", 1)
-    profile.setPreference("network.proxy.http", "localhost")
-    profile.setPreference("network.proxy.http_port", 11000)
-    profile.setPreference("network.proxy.share_proxy_settings", true)
-    profile.setPreference("network.proxy.no_proxies_on", "")
-    val options: FirefoxOptions = new FirefoxOptions
-    options.setLegacy(true)
-    val firefoxCapabilities: DesiredCapabilities = new DesiredCapabilities()
-    firefoxCapabilities.setCapability(FirefoxDriver.PROFILE, profile)
-    firefoxCapabilities.setCapability("marionette", false)
-    options.addDesiredCapabilities(firefoxCapabilities)
-    val capabilities = options.toDesiredCapabilities
-    println("Running ZAP Firefox Driver")
-    new FirefoxDriver(capabilities)
-  }
-  
-    def createZapChromeDriver: WebDriver = {
-    var options = new ChromeOptions()
-    var capabilities = DesiredCapabilities.chrome()
-    options.addArguments("test-type")
-    options.addArguments("--proxy-server=http://localhost:11000")
-    capabilities.setCapability(ChromeOptions.CAPABILITY, options)
-    val driver = new ChromeDriver(capabilities)
-    val caps = driver.getCapabilities
-    val browserName = caps.getBrowserName
-    val browserVersion = caps.getVersion
-    println( "Browser name & version: "+ browserName+" "+browserVersion)
-    driver
-  }
-```
-
-### Run the ZAP tests on your machine
+#### Run the ZAP tests on your machine:
 
 * Start your application locally
 * Start ZAP from the command line:
@@ -140,9 +102,9 @@ You need to make sure you run enough UI tests to hit all the urls that you want 
 Run the penetration tests (using your new ZapRunner file) - our command to do this looks like this:
 ```sbt "testOnly <ZapRunnerClass>"```
 
-### How do we read the output of the tests?
+#### How do we read the output of the tests?
 An html report is created at /target/zap-reports/ZapReport.html irrespective of the test outcome. Even when there are no alerts found,
- a report is generated indicating the summary of scans ran and the failureThreshold set. If you are surprised about getting a green build, 
+a report is generated indicating the summary of scans ran and the failureThreshold set. If you are surprised about getting a green build, 
 it may be that you need to adjust the variables you are passing to the library, or you may not have run enough UI tests
 proxying through ZAP. 
 
@@ -162,7 +124,6 @@ proxying through ZAP.
 
 ### Supported browsers
 We have tested the library using Chrome and Firefox.
-
 
 ### License
 
