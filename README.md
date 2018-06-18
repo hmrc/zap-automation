@@ -70,7 +70,7 @@ A detailed example is available [here](examples/singleConfigExample/SingleConfig
 
 For Zap to check security vulnerabilities of your application, it needs to know the various endpoints and flow of the application. 
 This can be achieved by using Zap as a proxying tool. When the Application Under Test uses Zap to proxy its requests, 
-Zap performs a non invasive passive scan checking for for vulnerabilities. To achieve this configure your test suite to proxy via Zap
+Zap performs a non invasive passive scan checking for vulnerabilities. To achieve this configure your test suite to proxy via Zap
 by creating a new browser profile for ZAP in your test suite and specifying zap proxy details. This can be done
 as below for firefox and chrome respectively:
    
@@ -93,14 +93,14 @@ as below for firefox and chrome respectively:
 #### Run the ZAP tests on your machine:
 
 * Start your application locally
-* Start ZAP from the command line:
-* * Change directory to where ZAP is installed (default Mac installation is in the root Applications directory: /Applications)
-* * Run this command: ZAP\ <version>.app/Contents/Java/zap.sh -daemon -config api.disablekey=true -port 11000
+* Changing the directory to where ZAP is installed (default Mac installation is in the root Applications directory: /Applications)
+* Run this command: ZAP\ 2.7.0.app/Contents/Java/zap.sh -daemon -config api.disablekey=true -port 11000
 * Run your acceptance tests pointing at your new ZAP browser profile
 
 You need to make sure you run enough UI tests to hit all the urls that you want to run your ZAP tests on. This may be all of your tests or a subset, it’s up to you.
-Run the penetration tests (using your new ZapRunner file) - our command to do this looks like this:
-```sbt "testOnly <ZapRunnerClass>"```
+Once the acceptance tests are completed, run the penetration tests (using your new ZapRunner file). If the ZapRunner is under
+utils.Support package, then the command to run the Zap tests will looks like this:
+```sbt "testOnly utils.Support.ZapRunner"```
 
 #### How do we read the output of the tests?
 An html report is created at /target/zap-reports/ZapReport.html irrespective of the test outcome. Even when there are no alerts found,
@@ -110,7 +110,7 @@ proxying through ZAP.
 
 | Key        | Description           | 
 | ------------- |:-------------| 
-| Low (Medium)  | Risk Code (Confidence Level)Risk Code is the risk of each type of vulnerability found. Confidence represents ZAP's "sureness" about the finding.| 
+| Low (Medium)  | Low is the Risk Code  and Medium is the Confidence Level. Risk Code is the risk of each type of vulnerability found. Confidence represents ZAP's "sureness" about the finding.| 
 | URL      | The Url in which the alert was identified      |  
 | Scanner ID | Id of the scanner. The passive and active scanners for your zap installation can be found at http://localhost:11000/HTML/pscan/view/scanners/ and http://localhost:11000/HTML/ascan/view/scanners/       |   
 | CWE Id| [Common Weakness Enumeration (CWE™) Id](https://cwe.mitre.org/about/faq.html).      |   
