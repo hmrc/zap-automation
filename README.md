@@ -1,16 +1,19 @@
 # zap-automation
 This scala library provides an abstraction above the [ZAP](https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project) API which allows for simple configurable execution of spider and active scans.  The zap-automation library also produces a report summarising the alerts captured during scans, and can be tuned to fail your test run depending on the severity of the vulnerabilities found.
 
-## Using ZAP to capture traffic
 
-### 1. Start OWASP ZAP with a named session
+## Capturing traffic with OWASP ZAP
+For Zap to check security vulnerabilities of your application, it needs to know the various endpoints and flow of the application.  This can be achieved by using Zap as a proxying tool. When the Application Under Test uses Zap to proxy its requests, Zap performs a non invasive passive scan checking for vulnerabilities.
 
-`<path-to-zap-installation>/zap -daemon -config api.disablekey=true -port 11000 -dir $WORKSPACE/results/zap -newsession zap-journey `
+### 1. Start ZAP with a named session
+You can start zap with the following command:
+`<path-to-zap-installation>/zap -daemon -config api.disablekey=true -port 11000`
+
+If you would like to preseve a zap session as a baseline to launch attacks against your application, then add the `-dir` and `-newsession` command line options:
+`<path-to-zap-installation>/zap -daemon -config api.disablekey=true -port 11000 -dir <path-to-session> -newsession <session-name> `
 
 ### 2. Configure your tests to proxy via ZAP
-For Zap to check security vulnerabilities of your application, it needs to know the various endpoints and flow of the application.  This can be achieved by using Zap as a proxying tool. When the Application Under Test uses Zap to proxy its requests, Zap performs a non invasive passive scan checking for vulnerabilities. To achieve this configure your test suite to proxy via Zap by creating a new browser profile for ZAP in your test suite and specifying zap proxy details. This can be done
-as below for firefox and chrome respectively:
-   
+You will need to configure WebDriver to proxy via Zap in your test like so:
    ```scala
        val profile: FirefoxProfile = new FirefoxPrfile
        profile.setAcceptUntrustedCertificates(true)
@@ -36,11 +39,11 @@ resolvers += Resolver.bintrayRepo("hmrc", "releases")
 libraryDependencies += "uk.gov.hmrc" %% "zap-automation" % "x.x.x"
 ```
 
-### 2. Create the configuration
+### 2. Create the zap-automation configuration
 In your test suite's application.conf create a zap-config object as shown in the example [here](examples/singleConfigExample/resources/singleConfigExampleApplication.conf). If you have multiple 
 security tests as part of the same suite and use different config for each of them, then refer to this example [here](examples/multipleConfigExample/resources/multipleConfigExampleApplication.conf).
   
-### 3. Create your Spec
+### 3. Create your Test
 Create a runner in your test suite by extending the ZapTest trait of the zap-automation library. The runner is required 
 to extend a testSuite. This can be done by extending any of ScalaTest's [testing styles](http://www.scalatest.org/user_guide/selecting_a_style). 
 The Zap runner is also expected to override the ZapConfiguration and call the triggerZapScan() method to trigger the scan.
