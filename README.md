@@ -1,36 +1,6 @@
 # zap-automation
 This scala library provides an abstraction above the [ZAP](https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project) API which allows for simple configurable execution of spider and active scans.  The zap-automation library also produces a report summarising the alerts captured during scans, and can be tuned to fail your test run depending on the severity of the vulnerabilities found.
 
-
-## Capturing traffic with OWASP ZAP
-For Zap to check security vulnerabilities of your application, it needs to know the various endpoints and flow of the application.  This can be achieved by using Zap as a proxying tool. When the Application Under Test uses Zap to proxy its requests, Zap performs a non invasive passive scan checking for vulnerabilities.
-
-### 1. Start ZAP with a named session
-You can start zap with the following command:
-`<path-to-zap-installation>/zap -daemon -config api.disablekey=true -port 11000`
-
-If you would like to preseve a zap session as a baseline to launch attacks against your application, then add the `-dir` and `-newsession` command line options:
-`<path-to-zap-installation>/zap -daemon -config api.disablekey=true -port 11000 -dir <path-to-session> -newsession <session-name> `
-
-### 2. Configure your tests to proxy via ZAP
-You will need to configure WebDriver to proxy via Zap in your test like so:
-   ```scala
-       val profile: FirefoxProfile = new FirefoxPrfile
-       profile.setAcceptUntrustedCertificates(true)
-       profile.setPreference("network.proxy.type", 1)
-       profile.setPreference("network.proxy.http", "localhost")
-       profile.setPreference("network.proxy.http_port", 11000)
-       profile.setPreference("network.proxy.share_proxy_settings", true)
-       profile.setPreference("network.proxy.no_proxies_on", "")
-       
-       var options = new ChromeOptions()
-       options.addArguments("test-type")
-       options.addArguments("--proxy-server=http://localhost:11000")
-       
-//       TODO: Add proxy details for API
-   ``` 
-Now run your WebDriver tests as you would normally.
-
 ## Using this library
 ### 1. In your SBT build add
 ```scala
