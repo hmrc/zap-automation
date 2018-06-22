@@ -37,10 +37,24 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
     eventually {
       spiderRunStatus
     }
+    eventually {
+      passiveScanCompleted
+    }
   }
 
   def spiderRunStatus: Value = {
     hasCallCompleted("/json/spider/view/status")
+  }
+
+  def passiveScanCompleted: Value = {
+    val path = "/json/pscan/view/recordsToScan"
+    val jsonResponse = Json.parse(callZapApi(path))
+    val recordsToScan = (jsonResponse \ "recordsToScan").as[String]
+    log.debug(s"path:$path \n recordsToScan: $recordsToScan")
+    if (recordsToScan > "0") {
+      throw ZapException(s"$path has still $recordsToScan records to scan.")
+    }
+    Run
   }
 
   def runAndCheckStatusOfActiveScan(implicit zapContext: ZapContext): Unit = {
@@ -57,7 +71,7 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
 
   def activeScanStatus: Value = {
     if (activeScan) {
-      hasCallCompleted("/json/spider/view/status")
+      hasCallCompleted("/json/ascan/view/status")
     }
     else
       NotRun
@@ -66,6 +80,7 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
   private def hasCallCompleted(path: String): Value = {
     val jsonResponse = Json.parse(callZapApi(path))
     val status = (jsonResponse \ "status").as[String]
+    log.debug(s"path:$path \n status: $status")
     if (status != "100") {
       throw ZapException(s"Request to path $path failed to return 100% complete.")
     }

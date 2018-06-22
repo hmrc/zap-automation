@@ -46,6 +46,7 @@ class ZapTearDownSpec extends BaseSpec {
       verify(httpClient).get(zapBaseUrl, "/json/context/action/removeContext", "contextName" -> zapContext.name)
       verify(httpClient).get(zapBaseUrl, "/json/ascan/action/removeScanPolicy", "scanPolicyName" -> zapContext.policy)
       verify(httpClient).get(eqTo(zapBaseUrl), eqTo("/json/core/action/deleteAllAlerts"), any())
+      verify(httpClient).get(eqTo(zapBaseUrl), eqTo("/json/core/action/shutdown"), any())
     }
   }
 }
