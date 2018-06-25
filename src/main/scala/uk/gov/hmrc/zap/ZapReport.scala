@@ -18,13 +18,13 @@ package uk.gov.hmrc.zap
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import uk.gov.hmrc.zap.api.Status.Value
+import uk.gov.hmrc.zap.api.ScanStatus
 import uk.gov.hmrc.zap.api.ZapAlert
 import uk.gov.hmrc.zap.logger.ZapLogger._
 
 object ZapReport {
 
-  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: Value, activeScanStatus: Value): String = {
+  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus, activeScanStatus: ScanStatus): String = {
     report.html.index(relevantAlerts, failureThreshold, spiderScanStatus, activeScanStatus).toString()
   }
 

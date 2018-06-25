@@ -19,10 +19,9 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.zap.ZapReport._
-import uk.gov.hmrc.zap.api.{Status, ZapAlert}
+import uk.gov.hmrc.zap.api.{ScanCompleted, ScanNotCompleted, ZapAlert}
 import uk.gov.hmrc.zap.client.HttpClient
 import uk.gov.hmrc.zap.config.ZapConfiguration
-import uk.gov.hmrc.zap.api.Status._
 
 import scala.xml.{Elem, Node, NodeSeq, XML}
 
@@ -40,13 +39,13 @@ class ZapReportSpec extends BaseSpec {
 
   "html report" should {
     "should contain the failure threshold so that " in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, threshold, spiderScanStatus = Run, activeScanStatus = NotRun)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, threshold, spiderScanStatus = ScanCompleted, activeScanStatus = ScanNotCompleted)
 
       reportHtmlAsString should include("AUniqueThreshold")
     }
 
     "should contain the correct alert count by risk in the Summary of Alerts table" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = Run, activeScanStatus = NotRun)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanNotCompleted)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "summary-high-count").text shouldBe "1"
@@ -56,7 +55,7 @@ class ZapReportSpec extends BaseSpec {
     }
 
     "should show the correct scan status in the Summary of Scan table when spiderScan and activeScan is not completed" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = NotRun, activeScanStatus = NotRun)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanNotCompleted, activeScanStatus = ScanNotCompleted)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "passive-scan").text shouldBe "Run"
@@ -65,7 +64,7 @@ class ZapReportSpec extends BaseSpec {
     }
 
     "should show the correct scan status in the Summary of Scan table when spiderScan and ActiveScan is completed" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = Run, activeScanStatus = Run)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "passive-scan").text shouldBe "Run"
@@ -74,7 +73,7 @@ class ZapReportSpec extends BaseSpec {
     }
 
     "should display the details of 4 alerts" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = Run, activeScanStatus = Run)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "type", "alert-details").size shouldBe 4
