@@ -1,7 +1,7 @@
 @import uk.gov.hmrc.zap.api.ZapAlert
-@import uk.gov.hmrc.zap.api.Status.Value
+@import uk.gov.hmrc.zap.api.ScanStatus
 
-@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: Value, activeScanStatus: Value)
+@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus, activeScanStatus: ScanStatus)
 
 <html>
     <head>

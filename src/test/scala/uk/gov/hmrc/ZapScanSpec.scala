@@ -22,7 +22,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.exceptions.TestFailedDueToTimeoutException
-import uk.gov.hmrc.zap.api.{ZapContext, ZapScan}
+import uk.gov.hmrc.zap.api._
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
@@ -45,11 +45,14 @@ class ZapScanSpec extends BaseSpec {
 
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
-      when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn((200, "the-response"))
+      when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
 
-      zapScan.runAndCheckStatusOfSpider
+      zapScan.runAndCheckStatusOfSpider shouldBe SpiderResult(spiderStatus = ScanCompleted, passiveScanStatus = ScanCompleted)
       verify(httpClient).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
       verify(httpClient).get(zapBaseUrl, "/json/spider/view/status")
+      verify(httpClient).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
     }
 
     "should fail if spider is not completed within the configured time" in new TestSetup with Eventually {
@@ -59,6 +62,17 @@ class ZapScanSpec extends BaseSpec {
 
       intercept[TestFailedDueToTimeoutException](zapScan.runAndCheckStatusOfSpider)
     }
+
+    "should fail if passive scan for spider is not completed within the configured time" in new TestSetup with Eventually {
+      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
+
+      when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn((200, "the-response"))
+      when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "1"}"""))
+
+      intercept[TestFailedDueToTimeoutException](zapScan.runAndCheckStatusOfSpider)
+    }
+
   }
 
   "runAndCheckStatusOfActiveScan" should {
@@ -71,8 +85,9 @@ class ZapScanSpec extends BaseSpec {
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
-      zapScan.runAndCheckStatusOfActiveScan
+      zapScan.runAndCheckStatusOfActiveScan shouldBe ScanCompleted
       verify(httpClient).get(zapBaseUrl, "/json/ascan/action/scan", "contextId" -> zapContext.id, "scanPolicyName" -> zapContext.policy, "url" -> testUrl)
+      verify(httpClient).get(zapBaseUrl, "/json/ascan/view/status")
     }
 
     "should not call Zap API to run the active scan if activeScan config is set to false" in new TestSetup {
@@ -80,7 +95,7 @@ class ZapScanSpec extends BaseSpec {
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
 
-      zapScan.runAndCheckStatusOfActiveScan
+      zapScan.runAndCheckStatusOfActiveScan shouldBe ScanNotCompleted
       Mockito.verifyZeroInteractions(httpClient)
     }
 
