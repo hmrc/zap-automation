@@ -1,18 +1,13 @@
-**zap-automation**
+# zap-automation
+This scala library is built for use in a [Scalatest](http://www.scalatest.org/) Suite, and provides an abstraction above the [OWASP ZAP API](https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project) which allows for simple configurable execution of spider and active scans. The zap-automation library also produces a report summarising the alerts captured during scans, and can be tuned to fail your test run depending on the severity of the vulnerabilities found.
 
+## Configuring a test to use zap-automation
+The below step-by-step guide assumes a running OWASP ZAP instance has already proxied traffic to build the context with which to launch an attack scan.  Visit the following pages for help on how to achieve this with an existing WebDriver journey test suite:
+- [Starting OWASP ZAP](wiki/WIP:-Managing-ZAP-Sessions-from-the-command-line)
+- [Proxying your WebDriver Tests via ZAP](wiki/Proxying-your-WebDriver-Tests via ZAP)
 
-This is a library utilising the [ZAP](https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project) API, 
-with pre configured steps to run a spider attack and then an active scan.
-
-
-### Run the unit tests for the library
-```scala
-sbt test
-```
-
-### Adding to your build
-
-In your SBT build add:
+### 1. Update your sbt build
+In your `build.sbt` file, add the following:
 
 ```scala
 resolvers += Resolver.bintrayRepo("hmrc", "releases")
@@ -20,157 +15,65 @@ resolvers += Resolver.bintrayRepo("hmrc", "releases")
 libraryDependencies += "uk.gov.hmrc" %% "zap-automation" % "x.x.x"
 ```
 
-### How to use the library
+### 2. Create the zap-automation configuration
+In your test suite's `application.conf` create a `zap-automation-config` configuration object.  See the [default configuration](src/main/resources/reference.conf) file for detail on each configuration option.
 
-* You will likely want to have a way to run some tests from the UI of the service/application you are testing, so that ZAP can learn about the URLs it needs to test.
-* You will also need to install and setup ZAP either locally, or on your build machine in order to use this library.
-* You will need a way to run the library, we have done this by using this file:
+An simple example can be found [here](examples/singleConfigExample/resources/singleConfigExampleApplication.conf).
 
-```scala
-package utils.Support
+You can also make use of the functionality available via [typesafe configuration](https://github.com/lightbend/config) if you would like to implement multiple security tests as part of the same test suite.  See example [here](examples/multipleConfigExample/resources/multipleConfigExampleApplication.conf).
 
-import uk.gov.hmrc.{ZapAlertFilter, ZapTest}
+### 3. Create the test
+Create a test run in your test suite by extending the ZapTest trait of the zap-automation library. The test **must** extend one of ScalaTest's [testing styles](http://www.scalatest.org/user_guide/selecting_a_style).
 
-class ZapRunner extends ZapTest{
+The test **must** also override [ZapConfiguration](src/main/scala/uk/gov/hmrc/zap/config/ZapConfiguration.scala) and call triggerZapScan().
 
-  /**
-    * zapBaseUrl is a required field - you'll need to set it in this file, for your project to compile.
-    * It will rarely need to be changed. We've included it as an overridable field
-    * for flexibility and just in case.
-    */
-  override val zapBaseUrl: String = "xxx"
+See example [here](examples/singleConfigExample/SingleConfigExampleRunner.scala).
 
-  /**
-    * testUrl is a required field - you'll need to set it in this file, for your project to compile.
-    * It needs to be the URL of the start page of your application (not just localhost:port).
-    */
-  override val testUrl: String = "xxx"
+### 4. Execute the test
+Execute the attack scans with sbt using test created in the previous step.  For example, if you created a test named `utils.support.ZapRunner` then the following command should work:
 
-  /**
-    * alertsBaseUrl is not a required field. This is the url that the zap-automation library
-    * will use to filter out the alerts that are shown to you. Note that while Zap is doing
-    * testing, it is likely to find alerts from other services that you don't own - for example
-    * from logging in, therefore we recommend that you set this to be the base url for the
-    * service you are interested in.
-    */
-  override val alertsBaseUrl: String = "xxx"
-
-  /**
-    * contextBaseUrl is not a required field. This url is added as the base url to your
-    * context.
-    * A context is a construct in Zap that limits the scope of any attacks run to a
-    * particular domain (this doesn't mean that Zap won't find alerts on other services during the
-    * browser test run).
-    * This would usually be the base url of your service - eg http://localhost:xxxx.*
-    */
-  override val contextBaseUrl: String = "xxx.*"
-
-  /**
-    * desiredTechnologyNames is not a required field. We recommend you don't change this
-    * field, as we've made basic choices for the platform. We made it overridable just in case
-    * your service differs from the standards of the Platform.
-    *
-    * The technologies that you put here will limit the amount of checks that ZAP will do to
-    * just the technologies that are relevant. The default technologies are set to
-    * "OS,OS.Linux,Language,Language.Xml,SCM,SCM.Git".
-    */
-  //override val desiredTechnologyNames: String = ""
-  
-    /**
-    * routesToBeIgnoredFromContext is not a required field. You may set this if you have any routes
-    * that are part of your application, but you do not want tested. For example, if you had any
-    * test-only routes, you could force Zap not to test them by adding them in here as a regex.
-    */
-  //override val routeToBeIgnoredFromContext: String = "xxx"
-
-  /**
-    * If, when you run the Zap tests, you find alerts that you have investigated and don't see as a problem
-    * you can filter them out using this code, on the cweid and the url that the alert was found on.
-    * The CWE ID is a Common Weakness Enumeration (http://cwe.mitre.org/data/index.html), you can
-    * find this by looking at the alert output from your tests. url can either be a normal string or a regex
-    * (for example you may wish to use a regex where a url includes an ID that differs with each test run)
-    * 
-    * As dots '.' and question marks '?' are used to build both regular expressions and URLs you need to be careful
-    * when instiating the filter that includes them (make sure that you escape them if they are not intended to be a
-    * regex quantifier).  
-    * For example:
-    *   www\.google\.com/search\?q=blah will match www.google.com/search?q=blah
-    */  
-  val alertToBeIgnored1: ZapAlertFilter = ZapAlertFilter(cweid = "16", url = "xxx")
-  override val alertsToIgnore: List[ZapAlertFilter] = List(alertToBeIgnored1)
-  
-  /**
-    * Not a required field. You should set this to be true if you are testing an API.
-    * By default this assumes you are testing a UI and therefore is defaulted to be false.
-    */
-  //override val testingAnApi: Boolean = false
-
-
-}
-```
-
-* You’ll need to be able to create a new browser profile for ZAP, and switch your browser to this new profile. We’ve done this using this code:
-
-```scala
-  def createZapDriver: WebDriver = {
-    val profile: FirefoxProfile = new FirefoxProfile
-    profile.setAcceptUntrustedCertificates(true)
-    profile.setPreference("network.proxy.type", 1)
-    profile.setPreference("network.proxy.http", "localhost")
-    profile.setPreference("network.proxy.http_port", 11000)
-    profile.setPreference("network.proxy.share_proxy_settings", true)
-    profile.setPreference("network.proxy.no_proxies_on", "")
-    val options: FirefoxOptions = new FirefoxOptions
-    options.setLegacy(true)
-    val firefoxCapabilities: DesiredCapabilities = new DesiredCapabilities()
-    firefoxCapabilities.setCapability(FirefoxDriver.PROFILE, profile)
-    firefoxCapabilities.setCapability("marionette", false)
-    options.addDesiredCapabilities(firefoxCapabilities)
-    val capabilities = options.toDesiredCapabilities
-    println("Running ZAP Firefox Driver")
-    new FirefoxDriver(capabilities)
-  }
-  
-    def createZapChromeDriver: WebDriver = {
-    var options = new ChromeOptions()
-    var capabilities = DesiredCapabilities.chrome()
-    options.addArguments("test-type")
-    options.addArguments("--proxy-server=http://localhost:11000")
-    capabilities.setCapability(ChromeOptions.CAPABILITY, options)
-    val driver = new ChromeDriver(capabilities)
-    val caps = driver.getCapabilities
-    val browserName = caps.getBrowserName
-    val browserVersion = caps.getVersion
-    println( "Browser name & version: "+ browserName+" "+browserVersion)
-    driver
-  }
-```
-
-
-### Run the ZAP tests on your machine
-
-* Start your application locally
-* Start ZAP from the command line:
-* * Change directory to where ZAP is installed (default Mac installation is in the root Applications directory: /Applications)
-* * Run this command: ZAP\ 2.6.0.app/Contents/Java/zap.sh -daemon -config api.disablekey=true -port 11000
-* Run your acceptance tests pointing at your new ZAP profile. Our command to do this looks like this:
-```sbt -Dbrowser=zap -Denvironment=Local ‘test-only Suites.RunZapTests’```
-
-
-You need to make sure you run enough UI tests to hit all the urls that you want to run your ZAP tests on. This may be all of your tests or a subset, it’s up to you.
-Run the penetration tests (using your new ZapRunner file) - our command to do this looks like this:
 ```sbt "testOnly utils.Support.ZapRunner"```
 
-### How do we read the output of the tests?
-Green build - no html report is created as there are no alerts to give you more information about. If you are surprised about getting a green build, if may be that you need to adjust the variables you are passing to the library, or you may not have run enough UI tests proxying through ZAP. If you have doubts please contact us. 
-Red build - alerts are printed in the console and a html report is created on the workspace. Note that the report will be deleted each time a new build is started.
+The output of a successful run will look something like this:
+![successful run](images/console-from-successful-run.png)
+
+## Reading the output of the test?
+A HTML report is created at `target/zap-reports/ZapReport.html` irrespective of whether or not vulnerabilities were found.
+
+The report contains the following sections:
+- **Summary of Alerts**: a summary of the vulnerabilities found during the scan
+- **Summary of Scans**: which of the scans executed (passive/spider/active)
+- **Failure Threshold**: the configured failure threshold
+- **Alert Details**: detail on each vulnerability/alert recorded
+
+The below table provides a description of each Alert detail:
 
 
-### Supported browsers
-We have tested the library using Chrome and Firefox.
+| Key | Description |
+| --- | --- |
+| Low (Medium)  | Low is the Risk Code  and Medium is the Confidence Level. Risk Code is the risk of each type of vulnerability found. Confidence represents ZAP's "sureness" about the finding.|
+| URL      | The Url in which the alert was identified      |
+| Scanner ID | Id of the scanner. The passive and active scanners for your zap installation can be found at http://localhost:11000/HTML/pscan/view/scanners/ and http://localhost:11000/HTML/ascan/view/scanners/       |
+| CWE Id | [Common Weakness Enumeration (CWE™) Id](https://cwe.mitre.org/about/faq.html).      |
+| Method | HTTP method      |
+| Parameter | Parameter used for the test      |
+| Evidence | Evidence for the alert      |
+| Description | Description of the alert      |
+| Solution | Solution for the alert      |
+| Reference(s) | Future use      |
+| Internal References(s) | Future use      |
 
+## Development
+### Run the unit tests for the library
+```scala
+sbt test
+```
 
-### License
+### Debugging
+The library provides various debug flags for local development of the library.
 
+### Issues
+Please raise any issues or feedback [here](issues/)
+
+## License
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
-    
