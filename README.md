@@ -3,8 +3,8 @@ This scala library is built for use in a [Scalatest](http://www.scalatest.org/) 
 
 ## Configuring a test to use zap-automation
 The below step-by-step guide assumes a running OWASP ZAP instance has already proxied traffic to build the context with which to launch an attack scan.  Visit the following pages for help on how to achieve this with an existing WebDriver journey test suite:
-- [Starting OWASP ZAP](wiki/Starting-OWASP-ZAP-for-use-with-zap-automation)
-- [Proxying your WebDriver Tests via ZAP](wiki/Configure-WebDriver-to-proxy-via-OWASP-ZAP)
+- [Starting OWASP ZAP](https://github.com/hmrc/zap-automation/wiki/Starting-OWASP-ZAP-for-use-with-zap-automation)
+- [Proxying your WebDriver Tests via ZAP](https://github.com/hmrc/zap-automation/wiki/Configure-WebDriver-to-proxy-via-OWASP-ZAP)
 
 ### 1. Update your sbt build
 In your `build.sbt` file, add the following:
