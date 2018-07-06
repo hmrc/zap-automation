@@ -56,7 +56,7 @@ class ZapSetUp(zapClient: ZapClient) {
   }
 
   def setUpContext(implicit zapContext: ZapContext): Unit = {
-    callZapApi("/json/context/action/includeInContext", "contextName" -> zapContext.name, "regex" -> contextBaseUrl)
+    callZapApi("/json/context/action/includeInContext", "contextName" -> zapContext.name, "regex" -> contextBaseUrlRegex)
     callZapApi("/json/context/action/excludeAllContextTechnologies", "contextName" -> zapContext.name)
 
     if (desiredTechnologyNames.nonEmpty) {

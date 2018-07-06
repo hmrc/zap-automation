@@ -43,7 +43,7 @@ class ZapConfiguration(userConfig: Config) {
 
   def testUrl: String = zapConfig.getString("testUrl")
 
-  def contextBaseUrl: String = zapConfig.getString("contextBaseUrl")
+  def contextBaseUrlRegex: String = zapConfig.getString("contextBaseUrlRegex")
 
   def ignoreOptimizelyAlerts: Boolean = zapConfig.getBoolean("ignoreOptimizelyAlerts")
 
