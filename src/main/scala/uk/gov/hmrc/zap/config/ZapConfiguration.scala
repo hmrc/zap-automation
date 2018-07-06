@@ -47,7 +47,7 @@ class ZapConfiguration(userConfig: Config) {
 
   def ignoreOptimizelyAlerts: Boolean = zapConfig.getBoolean("ignoreOptimizelyAlerts")
 
-  def alertsBaseUrl: String = zapConfig.getString("alertsBaseUrl")
+  def alertUrlsToReport: List[String] = zapConfig.getStringList("alertUrlsToReport").toList
 
   def testingAnApi: Boolean = zapConfig.getBoolean("testingAnApi")
 

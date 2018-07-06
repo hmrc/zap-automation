@@ -41,9 +41,19 @@ class ZapAlerts(zapClient: ZapClient) {
       relevantAlerts
   }
 
-
   def parsedAlerts: List[ZapAlert] = {
-    val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> alertsBaseUrl)
+    var alerts: List[ZapAlert] = List.empty
+    if (alertUrlsToReport.isEmpty) {
+      alerts = getAlerts()
+    }
+    else {
+      alertUrlsToReport.foreach { alertUrl => alerts = getAlerts(alertUrl) ::: alerts }
+    }
+    alerts
+  }
+
+  private def getAlerts(baseUrl: String = ""): List[ZapAlert] = {
+    val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> baseUrl)
     val jsonResponse = Json.parse(response)
     (jsonResponse \ "alerts").as[List[ZapAlert]]
   }

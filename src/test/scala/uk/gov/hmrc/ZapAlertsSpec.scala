@@ -17,8 +17,8 @@
 package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.mockito.Matchers.any
-import org.mockito.Mockito.when
+import org.mockito.Matchers.{any, eq => eqTo}
+import org.mockito.Mockito.{verify, when, times}
 import uk.gov.hmrc.zap.api.{ZapAlert, ZapAlerts}
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
@@ -217,7 +217,80 @@ class ZapAlertsSpec extends BaseSpec {
                                                                                       }"""))
 
       val alert1: ZapAlert = ZapAlert("Other text", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+
       zapAlerts.parsedAlerts should contain theSameElementsAs List(alert1)
+      verify(httpClient, times(1)).get(any(), any(), any())
+    }
+
+    "should call zap alerts endpoint for every url in alertUrlsToReport config" in new TestSetup {
+
+      override lazy val config: Config = updateTestConfigWith(
+        """alertUrlsToReport = [
+          |    "http://localhost:1234",
+          |    "http://localhost:5678"]""")
+
+      when(httpClient.get(any(), eqTo("/json/core/view/alerts"), any())).thenReturn((200,
+      """{
+                                                                                      "alerts": [
+                                                                                      {
+                                                                                      "sourceid": "",
+                                                                                      "other": "Other text",
+                                                                                      "method": "",
+                                                                                      "evidence": "",
+                                                                                      "pluginId": "",
+                                                                                      "cweid": "",
+                                                                                      "confidence": "",
+                                                                                      "wascid": "",
+                                                                                      "description": "",
+                                                                                      "messageId": "",
+                                                                                      "url": "",
+                                                                                      "reference": "",
+                                                                                      "solution": "",
+                                                                                      "alert": "",
+                                                                                      "param": "",
+                                                                                      "attack": "",
+                                                                                      "name": "",
+                                                                                      "risk": "",
+                                                                                      "id": ""
+                                                                                      }
+                                                                                      ]
+                                                                                      }"""))
+      zapAlerts.parsedAlerts.size shouldBe 2
+      verify(httpClient, times(2)).get(any(), any(), any())
+    }
+
+    "should call zap alerts endpoint once when alertUrlsToReport config is []" in new TestSetup {
+
+      override lazy val config: Config = updateTestConfigWith("""alertUrlsToReport = []""")
+
+      when(httpClient.get(any(), eqTo("/json/core/view/alerts"), any())).thenReturn((200,
+        """{
+                                                                                      "alerts": [
+                                                                                      {
+                                                                                      "sourceid": "",
+                                                                                      "other": "Other text",
+                                                                                      "method": "",
+                                                                                      "evidence": "",
+                                                                                      "pluginId": "",
+                                                                                      "cweid": "",
+                                                                                      "confidence": "",
+                                                                                      "wascid": "",
+                                                                                      "description": "",
+                                                                                      "messageId": "",
+                                                                                      "url": "",
+                                                                                      "reference": "",
+                                                                                      "solution": "",
+                                                                                      "alert": "",
+                                                                                      "param": "",
+                                                                                      "attack": "",
+                                                                                      "name": "",
+                                                                                      "risk": "",
+                                                                                      "id": ""
+                                                                                      }
+                                                                                      ]
+                                                                                      }"""))
+      zapAlerts.parsedAlerts.size shouldBe 1
+      verify(httpClient, times(1)).get(any(), any(), any())
     }
   }
 }
