@@ -42,14 +42,10 @@ class ZapAlerts(zapClient: ZapClient) {
   }
 
   def parsedAlerts: List[ZapAlert] = {
-    var alerts: List[ZapAlert] = List.empty
-    if (alertUrlsToReport.isEmpty) {
-      alerts = getAlerts()
-    }
-    else {
-      alertUrlsToReport.foreach { alertUrl => alerts = getAlerts(alertUrl) ::: alerts }
-    }
-    alerts
+    if (alertUrlsToReport.isEmpty)
+      getAlerts()
+    else
+      alertUrlsToReport.flatMap(getAlerts)
   }
 
   private def getAlerts(baseUrl: String = ""): List[ZapAlert] = {
