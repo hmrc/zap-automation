@@ -32,7 +32,6 @@ val compileDependencies = Seq(
 )
 
 val testDependencies = Seq(
-  "com.typesafe.play" %% "play-test"  % "2.6.12"  % "test",
   "org.mockito"       % "mockito-all" % "1.10.19" % "test"
 )
 

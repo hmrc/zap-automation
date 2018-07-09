@@ -52,7 +52,7 @@ class ZapSetupSpec extends BaseSpec {
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
       zapSetUp.setUpContext
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> zapContext.name, "regex" -> contextBaseUrl)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> zapContext.name, "regex" -> contextBaseUrlRegex)
       verify(httpClient).get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> zapContext.name)
       verify(httpClient).get(zapBaseUrl, "/json/context/action/includeContextTechnologies", "contextName" -> zapContext.name, "technologyNames" -> desiredTechnologyNames)
     }
