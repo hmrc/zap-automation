@@ -63,4 +63,6 @@ class ZapConfiguration(userConfig: Config) {
 
   def patienceConfigTimeout: Int = zapConfig.getInt("debug.patienceConfigTimeout")
 
+  def patienceConfigInterval: Int = zapConfig.getInt("debug.patienceConfigInterval")
+
 }

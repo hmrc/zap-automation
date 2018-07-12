@@ -29,7 +29,7 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
   import zapClient.zapConfiguration._
 
   implicit override val patienceConfig =
-    PatienceConfig(timeout = scaled(Span(patienceConfigTimeout, Seconds)), interval = scaled(Span(500, Millis)))
+    PatienceConfig(timeout = scaled(Span(patienceConfigTimeout, Seconds)), interval = scaled(Span(patienceConfigInterval, Seconds)))
 
   def runAndCheckStatusOfSpider(implicit zapContext: ZapContext): SpiderResult = {
     callZapApi("/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
