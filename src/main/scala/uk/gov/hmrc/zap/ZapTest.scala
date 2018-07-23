@@ -45,9 +45,19 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
   }
 
   def triggerZapScan(): Unit = {
-    zapScan.runAndCheckStatusOfSpider
-    zapScan.runAndCheckStatusOfActiveScan
+    zapScan.triggerSpiderScan()
 
+    if (zapScan.spiderRunStatus == ScanNotCompleted) {
+      throw ZapException("Spider Run not completed within the provided duration")
+    }
+
+    if (zapConfiguration.activeScan) {
+      zapScan.triggerActiveScan()
+
+      if (zapScan.activeScanStatus == ScanNotCompleted) {
+        throw ZapException("Active Scan not completed within the provided duration")
+      }
+    }
     val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
     if (!ZapTestStatus.isTestSucceeded(relevantAlerts, zapConfiguration.failureThreshold)) {
       throw ZapException(s"Zap found some new alerts - see link to HMTL report above!")

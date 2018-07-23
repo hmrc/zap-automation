@@ -18,10 +18,8 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
-import org.mockito.Mockito
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.exceptions.TestFailedDueToTimeoutException
 import uk.gov.hmrc.zap.api._
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
@@ -36,76 +34,88 @@ class ZapScanSpec extends BaseSpec {
     val zapScan = new ZapScan(zapClient)
   }
 
-  private val jsonStatus = """{"status": "100"}"""
-
-  "runAndCheckStatusOfSpider" should {
+  "Trigger Spider scan" should {
 
     "should trigger the spider scan" in new TestSetup {
       import zapConfiguration._
 
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
+      private val statusCode = 200
+      private val responseBody = "the-response"
+      private val response = (statusCode, responseBody)
 
-      when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn((200, "the-response"))
-      when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
+
+      zapScan.triggerSpiderScan shouldBe responseBody
+      verify(httpClient).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
+    }
+  }
+
+  "Spider run status" should {
+
+    "should return ScanCompleted if spider is completed within the configured duration" in new TestSetup with Eventually {
+      import zapConfiguration._
+
+      when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
       when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
 
-      zapScan.runAndCheckStatusOfSpider shouldBe SpiderResult(spiderStatus = ScanCompleted, passiveScanStatus = ScanCompleted)
-      verify(httpClient).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
+      zapScan.spiderRunStatus shouldBe ScanCompleted
       verify(httpClient).get(zapBaseUrl, "/json/spider/view/status")
       verify(httpClient).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
     }
 
-    "should fail if spider is not completed within the configured time" in new TestSetup with Eventually {
+    "should return ScanNotCompleted if spider is not completed within the configured time" in new TestSetup with Eventually {
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
-      when(httpClient.get(any(), any(), any())).thenReturn((200, """{"status": "99"}"""))
+      when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "99"}"""))
 
-      intercept[TestFailedDueToTimeoutException](zapScan.runAndCheckStatusOfSpider)
+      zapScan.spiderRunStatus shouldBe ScanNotCompleted
     }
 
-    "should fail if passive scan for spider is not completed within the configured time" in new TestSetup with Eventually {
+    "return ScanNotCompleted if passive scan for spider is not completed within the configured time" in new TestSetup with Eventually {
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
-      when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn((200, "the-response"))
-      when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
       when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "1"}"""))
 
-      intercept[TestFailedDueToTimeoutException](zapScan.runAndCheckStatusOfSpider)
+      zapScan.spiderRunStatus shouldBe ScanNotCompleted
     }
-
   }
 
-  "runAndCheckStatusOfActiveScan" should {
+  "Trigger Active scan" should {
 
-    "should run the active scan only if activeScan config is set to true" in new TestSetup {
-      override lazy val config: Config = updateTestConfigWith("activeScan=true")
-      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
-
+    "should trigger the active scan" in new TestSetup {
       import zapConfiguration._
-
-      when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
-
-      zapScan.runAndCheckStatusOfActiveScan shouldBe ScanCompleted
-      verify(httpClient).get(zapBaseUrl, "/json/ascan/action/scan", "contextId" -> zapContext.id, "scanPolicyName" -> zapContext.policy, "url" -> testUrl)
-      verify(httpClient).get(zapBaseUrl, "/json/ascan/view/status")
-    }
-
-    "should not call Zap API to run the active scan if activeScan config is set to false" in new TestSetup {
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
+      private val statusCode = 200
+      private val responseBody = "the-response"
+      private val response = (statusCode, responseBody)
 
-      when(httpClient.get(any(), any(), any())).thenReturn((200, jsonStatus))
+      when(httpClient.get(any(), eqTo("/json/ascan/action/scan"), any())).thenReturn(response)
 
-      zapScan.runAndCheckStatusOfActiveScan shouldBe ScanNotCompleted
-      Mockito.verifyZeroInteractions(httpClient)
+      zapScan.triggerActiveScan shouldBe responseBody
+      verify(httpClient).get(zapBaseUrl, "/json/ascan/action/scan", "contextId" -> zapContext.id, "scanPolicyName" -> zapContext.policy, "url" -> testUrl)
     }
+  }
 
-    "should fail if active scan is not completed within the configured time" in new TestSetup with Eventually {
+  "Active Scan status" should {
+
+    "should return ScanCompleted if active scan is completed within the configured duration" in new TestSetup with Eventually {
       override lazy val config: Config = updateTestConfigWith("activeScan=true")
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
-      when(httpClient.get(any(), any(), any())).thenReturn((200, """{"status": "99"}"""))
+      when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
 
-      intercept[TestFailedDueToTimeoutException](zapScan.runAndCheckStatusOfActiveScan)
+      zapScan.activeScanStatus shouldBe ScanCompleted
+    }
+
+    "return ScanNotCompleted if active scan is not completed within the configured duration" in new TestSetup with Eventually {
+      override lazy val config: Config = updateTestConfigWith("activeScan=true")
+      private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
+
+      when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "99"}"""))
+
+      zapScan.activeScanStatus shouldBe ScanNotCompleted
     }
   }
 }
