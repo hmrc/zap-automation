@@ -23,18 +23,18 @@ import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.config.ZapConfiguration
 import uk.gov.hmrc.zap.logger.ZapLogger._
 
-trait ZapTest extends BeforeAndAfterAll with HealthCheck {
+trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
 
   this: Suite =>
 
   val zapConfiguration: ZapConfiguration
 
-  private lazy val zapClient = new ZapClient(zapConfiguration)
-  private lazy val zapSetup = new ZapSetUp(zapClient)
-  private lazy val zapScan = new ZapScan(zapClient)
-  private lazy val zapAlerts = new ZapAlerts(zapClient)
+  protected lazy val zapClient = new ZapClient(zapConfiguration)
+  protected lazy val zapSetup = new ZapSetUp(zapClient)
+  protected lazy val zapScan = new ZapScan(zapClient)
+  protected lazy val zapAlerts = new ZapAlerts(zapClient)
 
-  private implicit lazy val zapContext: ZapContext = zapSetup.initialize()
+  implicit lazy val zapContext: ZapContext = zapSetup.initialize()
 
   override def beforeAll(): Unit = {
     if (zapConfiguration.debugHealthCheck) {
@@ -42,16 +42,6 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
     }
     zapSetup.setUpPolicy
     zapSetup.setUpContext
-  }
-
-  def triggerZapScan(): Unit = {
-    zapScan.runAndCheckStatusOfSpider
-    zapScan.runAndCheckStatusOfActiveScan
-
-    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
-    if (!ZapTestStatus.isTestSucceeded(relevantAlerts, zapConfiguration.failureThreshold)) {
-      throw ZapException(s"Zap found some new alerts - see link to HMTL report above!")
-    }
   }
 
   override def afterAll(): Unit = {
@@ -69,6 +59,34 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck {
     val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
     writeToFile(generateHtmlReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold,
       zapScan.spiderRunStatus, zapScan.activeScanStatus))
+  }
+}
+
+trait ZapOrchestrator {
+
+  protected def zapConfiguration: ZapConfiguration
+  protected def zapSetup: ZapSetUp
+  protected def zapScan: ZapScan
+  protected def zapAlerts: ZapAlerts
+
+  def triggerZapScan()(implicit zapContext: ZapContext): Unit = {
+    zapScan.triggerSpiderScan()
+    if (zapScan.spiderRunStatus == ScanNotCompleted) {
+      throw SpiderScanException("Spider Run not completed within the provided duration")
+    }
+
+    if (zapConfiguration.activeScan) {
+      zapScan.triggerActiveScan()
+
+      if (zapScan.activeScanStatus == ScanNotCompleted) {
+        throw ActiveScanException("Active Scan not completed within the provided duration")
+      }
+    }
+
+    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
+    if (!ZapTestStatus.isTestSucceeded(relevantAlerts, zapConfiguration.failureThreshold)) {
+      throw ZapAlertException(s"Zap found some new alerts - see link to HMTL report above!")
+    }
   }
 }
 
