@@ -57,6 +57,12 @@ class ZapConfiguration(userConfig: Config) {
 
   def alertsToIgnore: List[Config] = zapConfig.getConfigList("alertsToIgnore").toList
 
+  def defaultScanners: Set[String] = zapConfig.getStringList("defaultScanners").toSet
+
+  def additionalScanners: Set[String] = zapConfig.getStringList("additionalScanners").toSet
+
+  def ignoreScanners: Set[String] = zapConfig.getStringList("ignoreScanners").toSet
+
   def debugHealthCheck: Boolean = zapConfig.getBoolean("debug.healthCheck")
 
   def debugTearDown: Boolean = zapConfig.getBoolean("debug.tearDown")

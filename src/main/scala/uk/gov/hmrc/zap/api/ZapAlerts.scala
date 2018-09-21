@@ -22,7 +22,6 @@ import uk.gov.hmrc.zap.client.ZapClient
 
 import scala.collection.mutable.ListBuffer
 
-
 class ZapAlerts(zapClient: ZapClient) {
 
   import zapClient._
@@ -30,16 +29,14 @@ class ZapAlerts(zapClient: ZapClient) {
 
   implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
 
-  def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
-    val relevantAlerts = allAlerts.filterNot { zapAlert =>
-      alertsToIgnore().exists(f => f.matches(zapAlert))
-    }
-
-    if (ignoreOptimizelyAlerts)
-      relevantAlerts.filterNot(zapAlert => zapAlert.evidence.contains("optimizely"))
-    else
-      relevantAlerts
-  }
+  def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] =
+    allAlerts
+      .filterNot(zapAlert => alertsToIgnore().exists(f => f.matches(zapAlert)))
+      .filterNot(zapAlert => ignoreOptimizelyAlerts && zapAlert.evidence.contains("optimizely"))
+      .filter { zapAlert =>
+        val relevantScanners = (defaultScanners ++ additionalScanners).diff(ignoreScanners)
+        relevantScanners.contains(zapAlert.pluginId) || zapAlert.pluginId.isEmpty
+      }
 
   def parsedAlerts: List[ZapAlert] = {
     if (alertUrlsToReport.isEmpty)
