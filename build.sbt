@@ -21,7 +21,6 @@ import uk.gov.hmrc.versioning.SbtGitVersioning
 
 val appName = "zap-automation"
 
-
 val compileDependencies = Seq(
   "com.typesafe.play"      %% "play-ahc-ws-standalone" % "1.1.9",
   "com.typesafe.play"      %% "play-json"              % "2.6.9",
@@ -36,10 +35,12 @@ val testDependencies = Seq(
 )
 
 lazy val zapAutomation = Project(appName, file("."))
-  .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning, SbtTwirl)
+  .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning, SbtTwirl, SbtArtifactory)
   .settings(
+    majorVersion := 1,
+    makePublicallyAvailableOnBintray := true,
     scalaVersion := "2.11.12",
     libraryDependencies ++= compileDependencies ++ testDependencies,
-    crossScalaVersions := Seq("2.11.7"),
+    crossScalaVersions := Seq("2.11.12"),
     resolvers += Resolver.bintrayRepo("hmrc", "releases")
   )
