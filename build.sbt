@@ -23,7 +23,7 @@ val appName = "zap-automation"
 
 val compileDependencies = Seq(
   "com.typesafe.play"      %% "play-ahc-ws-standalone" % "1.1.9",
-  "com.typesafe.play"      %% "play-json"              % "2.6.9",
+  "com.typesafe.play"      %% "play-json"              % "2.6.13",
   "org.slf4j"              % "slf4j-api"               % "1.7.25",
   "org.slf4j"              % "slf4j-simple"            % "1.7.25",
   "org.scalatest"          %% "scalatest"              % "3.0.3",
