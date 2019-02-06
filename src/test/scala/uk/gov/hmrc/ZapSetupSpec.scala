@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{times, verify, when}
 import uk.gov.hmrc.zap.api.{ZapContext, ZapSetUp}
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
@@ -79,6 +79,26 @@ class ZapSetupSpec extends BaseSpec {
       zapSetUp.setUpPolicy
       verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/disableAllScanners"), any())
       verify(httpClient).get(eqTo(zapConfiguration.zapBaseUrl), eqTo("/json/ascan/action/enableScanners"), any())
+    }
+  }
+
+  "setUpConnectionTimeout" should {
+
+    "is set when connectionTimeout does not match the defaultTimeout" in new TestSetup {
+      override lazy val config: Config = updateTestConfigWith("debug.connectionTimeout=10")
+      when(httpClient.get(any(), any(), any())).thenReturn((200, """{"Result":"OK"}"""))
+
+      zapSetUp.setConnectionTimeout()
+      verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/core/action/setOptionTimeoutInSecs", "Integer" -> "10")
+    }
+
+    "is not set when connectionTimeout matches the defaultTimeout" in new TestSetup {
+      override lazy val config: Config = updateTestConfigWith("debug.connectionTimeout=20")
+      when(httpClient.get(any(), any(), any())).thenReturn((200, """{"Result":"OK"}"""))
+
+      zapSetUp.setConnectionTimeout()
+      verify(httpClient, times(0))
+        .get(zapConfiguration.zapBaseUrl, "/json/core/action/setOptionTimeoutInSecs", "Integer" -> "20")
     }
   }
 }
