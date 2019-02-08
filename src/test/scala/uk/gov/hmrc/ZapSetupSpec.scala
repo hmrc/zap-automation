@@ -84,7 +84,7 @@ class ZapSetupSpec extends BaseSpec {
 
   "setUpConnectionTimeout" should {
 
-    "is set when connectionTimeout does not match the defaultTimeout" in new TestSetup {
+    "set up Zap connection time out with provided timeout value" in new TestSetup {
       override lazy val config: Config = updateTestConfigWith("debug.connectionTimeout=10")
       when(httpClient.get(any(), any(), any())).thenReturn((200, """{"Result":"OK"}"""))
 
@@ -92,13 +92,11 @@ class ZapSetupSpec extends BaseSpec {
       verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/core/action/setOptionTimeoutInSecs", "Integer" -> "10")
     }
 
-    "is not set when connectionTimeout matches the defaultTimeout" in new TestSetup {
-      override lazy val config: Config = updateTestConfigWith("debug.connectionTimeout=20")
+    "set up Zap connection time out with default timeout value when not provided" in new TestSetup {
       when(httpClient.get(any(), any(), any())).thenReturn((200, """{"Result":"OK"}"""))
 
       zapSetUp.setConnectionTimeout()
-      verify(httpClient, times(0))
-        .get(zapConfiguration.zapBaseUrl, "/json/core/action/setOptionTimeoutInSecs", "Integer" -> "20")
+      verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/core/action/setOptionTimeoutInSecs", "Integer" -> "20")
     }
   }
 }

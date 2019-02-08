@@ -68,12 +68,8 @@ class ZapSetUp(zapClient: ZapClient) {
   }
 
   def setConnectionTimeout(): Unit = {
-    val defaultTimeout: Int = 20
-
-    if (connectionTimeout != defaultTimeout) {
-      callZapApi("/json/core/action/setOptionTimeoutInSecs", "Integer" -> s"$connectionTimeout")
-      log.info(s"Zap Connection Timeout set to $connectionTimeout")
-    }
+    callZapApi("/json/core/action/setOptionTimeoutInSecs", "Integer" -> s"$connectionTimeout")
+    log.info(s"Zap Connection Timeout set to $connectionTimeout")
   }
 }
 
