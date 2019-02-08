@@ -69,7 +69,7 @@ class ZapSetUp(zapClient: ZapClient) {
 
   def setConnectionTimeout(): Unit = {
     callZapApi("/json/core/action/setOptionTimeoutInSecs", "Integer" -> s"$connectionTimeout")
-    log.info(s"Zap Connection Timeout set to $connectionTimeout")
+    log.info(s"Zap Connection Timeout set to $connectionTimeout seconds")
   }
 }
 
