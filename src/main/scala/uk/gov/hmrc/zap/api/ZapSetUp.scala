@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,11 @@ class ZapSetUp(zapClient: ZapClient) {
       callZapApi("/json/context/action/excludeFromContext", "contextName" -> zapContext.name, "regex" -> routeToBeIgnoredFromContext)
     }
   }
-}
 
+  def setConnectionTimeout(): Unit = {
+    callZapApi("/json/core/action/setOptionTimeoutInSecs", "Integer" -> s"$connectionTimeout")
+    log.info(s"Zap Connection Timeout set to $connectionTimeout seconds")
+  }
+}
 
 case class ZapContext(id: String, name: String, policy: String)

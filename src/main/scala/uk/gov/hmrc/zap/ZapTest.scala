@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
     if (zapConfiguration.debugHealthCheck) {
       healthCheck(zapConfiguration.testUrl)
     }
+    zapSetup.setConnectionTimeout()
     zapSetup.setUpPolicy
     zapSetup.setUpContext
   }
@@ -89,4 +90,3 @@ trait ZapOrchestrator {
     }
   }
 }
-
