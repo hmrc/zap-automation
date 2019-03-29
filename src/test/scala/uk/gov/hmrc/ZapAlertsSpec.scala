@@ -344,4 +344,26 @@ class ZapAlertsSpec extends BaseSpec {
       verify(httpClient, times(1)).get(any(), any(), any())
     }
   }
+
+  "applyCustomRisk" should {
+
+    "apply custom risk level to the configured pluginId" in new TestSetup {
+
+      override lazy val config: Config = updateTestConfigWith("""customRiskConf = [
+      {pluginId: "322420643", risk: "High"},
+      {pluginId: "10000", risk: "Medium"}
+      ]""")
+
+      val alerts: List[ZapAlert] = List[ZapAlert](
+        ZapAlert(cweid = "16", pluginId = "322420643",  url = "http://localhost:99991/hello/SB363126A/optional/something-else?param1=1234", risk = "Low"),
+        ZapAlert(cweid = "16", pluginId = "100090",  url = "http://localhost:99991/hello/SB363126A/optional/something-else?param1=1234", risk = "Low"),
+        ZapAlert(cweid = "16", pluginId = "10000",  url = "http://localhost:99991/hello/SB363126A/optional/something-else?param1=1234", risk = "Low")
+      )
+
+      val relevantAlerts: List[ZapAlert] = alerts.map(zapAlerts.applyRiskLevel)
+      relevantAlerts.find(alert => alert.pluginId.equals("322420643")).get.risk shouldBe "High"
+      relevantAlerts.find(alert => alert.pluginId.equals("100090")).get.risk shouldBe "Low"
+      relevantAlerts.find(alert => alert.pluginId.equals("10000")).get.risk shouldBe "Medium"
+    }
+  }
 }

@@ -45,6 +45,15 @@ class ZapAlerts(zapClient: ZapClient) {
       alertUrlsToReport.flatMap(getAlerts)
   }
 
+  def applyRiskLevel(alert: ZapAlert): ZapAlert = {
+    val customRiskLevels: List[Config] = zapConfiguration.customRiskConf
+
+    customRiskLevels.find({riskInfo => alert.pluginId == riskInfo.getString("pluginId")}) match {
+      case Some(riskInfo) => alert.modifyRisk(riskInfo.getString("risk"))
+      case None => alert
+    }
+  }
+
   private def getAlerts(baseUrl: String = ""): List[ZapAlert] = {
     val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> baseUrl)
     val jsonResponse = Json.parse(response)
@@ -102,6 +111,8 @@ case class ZapAlert(other: String = "",
   val confidenceCodes = Map("High"->"1",
     "Medium"->"2",
     "Low"->"3")
+
+   def modifyRisk(newRisk: String): ZapAlert = this.copy(risk = newRisk)
 }
 
 
