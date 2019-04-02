@@ -57,6 +57,8 @@ class ZapConfiguration(userConfig: Config) {
 
   def alertsToIgnore: List[Config] = zapConfig.getConfigList("alertsToIgnore").toList
 
+  def customRiskConf: List[Config] = zapConfig.getConfigList("customRiskConf").toList
+
   def defaultScanners: Set[String] = zapConfig.getStringList("defaultScanners").toSet
 
   def additionalScanners: Set[String] = zapConfig.getStringList("additionalScanners").toSet
