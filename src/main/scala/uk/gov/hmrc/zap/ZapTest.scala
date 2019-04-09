@@ -57,7 +57,6 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
   }
 
   private def createTestReport(): Unit = {
-    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts).map(zapAlerts.applyRiskLevel)
     writeToFile(generateHtmlReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold,
       zapScan.spiderRunStatus, zapScan.activeScanStatus))
   }
@@ -69,6 +68,8 @@ trait ZapOrchestrator {
   protected def zapSetup: ZapSetUp
   protected def zapScan: ZapScan
   protected def zapAlerts: ZapAlerts
+
+  lazy val relevantAlerts: List[ZapAlert] = zapAlerts.filterAlerts(zapAlerts.parsedAlerts).map(zapAlerts.applyRiskLevel)
 
   def triggerZapScan()(implicit zapContext: ZapContext): Unit = {
     zapScan.triggerSpiderScan()
@@ -84,9 +85,10 @@ trait ZapOrchestrator {
       }
     }
 
-    val relevantAlerts = zapAlerts.filterAlerts(zapAlerts.parsedAlerts)
     if (!ZapTestStatus.isTestSucceeded(relevantAlerts, zapConfiguration.failureThreshold)) {
-      throw ZapAlertException(s"Zap found some new alerts - see link to HMTL report above!")
+      throw ZapAlertException(s"Zap found some new alerts - see link to HTML report above!")
     }
   }
+
+
 }
