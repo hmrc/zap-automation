@@ -13,25 +13,47 @@ In your `build.sbt` file, add the following:
 ```scala
 resolvers += Resolver.bintrayRepo("hmrc", "releases")
 
-libraryDependencies += "uk.gov.hmrc" %% "zap-automation" % "x.x.x"
+libraryDependencies += "uk.gov.hmrc" %% "zap-automation" % "x.x.x" % "test"
 ```
 Replace `x.x.x` with a valid zap-automation version [ ![Download](https://api.bintray.com/packages/hmrc/releases/zap-automation/images/download.svg) ](https://bintray.com/hmrc/releases/zap-automation/_latestVersion)
 
-### 2. Create the zap-automation configuration
+### 2. Configure logger
+The library uses SLF4J for logging purposes. The binding used is `slf4j-api`. If your test suite already has 
+a logger implemented, you would see the below warning:
+
+```SLF4J: Class path contains multiple SLF4J bindings.```
+
+This could result in zap tests running in `debug` level. 
+
+To fix this, exclude zap-automation's SLF4J dependency in SBT: 
+
+```scala
+ "uk.gov.hmrc" %% "zap-automation" % "x.x.x % "test" exclude( "org.slf4j","slf4j-api")
+```
+If your test suite uses `logback-classic` as the SLF4J binding, then you would need to pass the relevant config to the ZAP test.
+For example:
+```scala
+sbt -Dlogback.configurationFile=logback.xml 'testOnly uk.gov.hmrc.test.ui.cucumber.utils.ZAPRunner'
+```
+Not passing the config file would result in zap-automation logging in debug level.
+
+Alternatively you could remove your existing logger dependencies and rely on the logger dependencies from zap-automation library. 
+
+### 3. Create the zap-automation configuration
 In your test suite's `application.conf` create a `zap-automation-config` configuration object.  See the [default configuration](src/main/resources/reference.conf) file for detail on each configuration option.
 
 An simple example can be found [here](examples/singleConfigExample/resources/singleConfigExampleApplication.conf).
 
 You can also make use of the functionality available via [typesafe configuration](https://github.com/lightbend/config) if you would like to implement multiple security tests as part of the same test suite.  See example [here](examples/multipleConfigExample/resources/multipleConfigExampleApplication.conf).
 
-### 3. Create the test
+### 4. Create the test
 Create a test run in your test suite by extending the ZapTest trait of the zap-automation library. The test **must** extend one of ScalaTest's [testing styles](http://www.scalatest.org/user_guide/selecting_a_style).
 
 The test **must** also override [ZapConfiguration](src/main/scala/uk/gov/hmrc/zap/config/ZapConfiguration.scala) and call triggerZapScan().
 
 See example [here](examples/singleConfigExample/SingleConfigExampleRunner.scala).
 
-### 4. Execute the test
+### 5. Execute the test
 Execute the attack scans with sbt using test created in the previous step.  For example, if you created a test named `utils.support.ZapRunner` then the following command should work:
 
 ```sbt "testOnly utils.Support.ZapRunner"```
