@@ -19,23 +19,22 @@ Replace `x.x.x` with a valid zap-automation version [ ![Download](https://api.bi
 
 ### 2. Configure logger
 The library uses SLF4J for logging purposes. The binding used is `slf4j-api`. If your test suite already has 
-a logger implemented, you would see the below warning:
+a logger implemented, you will see the below warning:
 
 ```SLF4J: Class path contains multiple SLF4J bindings.```
 
-This could result in zap tests running in `debug` level. 
+This may result in the zap tests running at `debug` log level. 
 
 To fix this, exclude zap-automation's SLF4J dependency in SBT: 
 
 ```scala
  "uk.gov.hmrc" %% "zap-automation" % "x.x.x % "test" exclude( "org.slf4j","slf4j-api")
 ```
-If your test suite uses `logback-classic` as the SLF4J binding, then you would need to pass the relevant config to the ZAP test.
-For example:
+If your test suite uses `logback-classic` as the SLF4J binding, then you will need to pass the relevant config to the ZAP test.  For example:
 ```scala
 sbt -Dlogback.configurationFile=logback.xml 'testOnly uk.gov.hmrc.test.ui.cucumber.utils.ZAPRunner'
 ```
-Not passing the config file would result in zap-automation logging in debug level.
+Not passing the config file would result in zap-automation logging in `debug` level.
 
 Alternatively you could remove your existing logger dependencies and rely on the logger dependencies from zap-automation library. 
 
