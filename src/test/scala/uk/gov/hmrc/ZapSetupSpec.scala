@@ -19,7 +19,7 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
 import org.mockito.Mockito.{times, verify, when}
-import uk.gov.hmrc.zap.api.{ZapContext, ZapSetUp}
+import uk.gov.hmrc.zap.api.{Scanner, ZapContext, ZapSetUp}
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
@@ -99,4 +99,27 @@ class ZapSetupSpec extends BaseSpec {
       verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/core/action/setOptionTimeoutInSecs", "Integer" -> "20")
     }
   }
+
+  "checkMissingScanners should be empty when all the required scanners are configured" in new TestSetup {
+
+    val missingScanners: Option[List[Scanner]] = zapSetUp.checkMissingScanners()
+
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "json/pscan/view/scanners")
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "json/ascan/view/scanners")
+    missingScanners shouldBe None
+  }
+
+  "checkMissingScanners should return list of required scanners that are not configured" in new TestSetup {
+
+    override lazy val config: Config = updateTestConfigWith("""defaultScanners.passive={"99999":"Test Scanner"}""")
+    val missingScanners: Option[List[Scanner]] = zapSetUp.checkMissingScanners()
+
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "json/pscan/view/scanners")
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "json/ascan/view/scanners")
+    missingScanners.get.size shouldBe 1
+    missingScanners.get.head.id shouldBe "99999"
+    missingScanners.get.head.name shouldBe "Test Scanner"
+  }
+
+
 }

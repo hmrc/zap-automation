@@ -19,7 +19,7 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.zap.ZapReport._
-import uk.gov.hmrc.zap.api.{ScanCompleted, ScanNotCompleted, ZapAlert}
+import uk.gov.hmrc.zap.api.{PassiveScan, ScanCompleted, ScanNotCompleted, Scanner, ZapAlert}
 import uk.gov.hmrc.zap.client.HttpClient
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
@@ -78,6 +78,23 @@ class ZapReportSpec extends BaseSpec {
 
       getByAtt(reportXml, "type", "alert-details").size shouldBe 4
     }
+
+    "should display missing scanners when all required scanners are not configured" in new TestSetup {
+      val missingScanner: List[Scanner] = List(Scanner("9999", "TestScanner", PassiveScan), Scanner("10000", "TestScanner", PassiveScan))
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, Some(missingScanner))
+      val reportXml: Elem = XML.loadString(reportHtmlAsString)
+
+      getByAtt(reportXml, "id", "9999").size shouldBe 2
+    }
+
+    "should not display missing scanners list when all required scanners configured" in new TestSetup {
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, None)
+      val reportXml: Elem = XML.loadString(reportHtmlAsString)
+
+      getByAtt(reportXml, "id", "missing-scanners").size shouldBe 0
+      getByAtt(reportXml, "type", "missing-scanners").size shouldBe 0
+    }
+
   }
 
   def getByAtt(e: Elem, att: String, value: String): NodeSeq = {

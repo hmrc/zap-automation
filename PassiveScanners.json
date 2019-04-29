@@ -1,0 +1,186 @@
+{
+  "scanners": [
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Script Passive Scan Rules",
+      "id": "50001",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Stats Passive Scan Rule",
+      "id": "50003",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Retire.js",
+      "id": "322420463",
+      "enabled": "true",
+      "quality": "alpha"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Application Error Disclosure",
+      "id": "90022",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Incomplete or No Cache-control and Pragma HTTP Header Set",
+      "id": "10015",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Content-Type Header Missing",
+      "id": "10019",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Cookie No HttpOnly Flag",
+      "id": "10010",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Cookie Without Secure Flag",
+      "id": "10011",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Cross-Domain JavaScript Source File Inclusion",
+      "id": "10017",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Web Browser XSS Protection Not Enabled",
+      "id": "10016",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Secure Pages Include Mixed Content",
+      "id": "10040",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Private IP Disclosure",
+      "id": "2",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Session ID in URL Rewrite",
+      "id": "3",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "X-Content-Type-Options Header Missing",
+      "id": "10021",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "X-Frame-Options Header Scanner",
+      "id": "10020",
+      "enabled": "true",
+      "quality": "release"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Charset Mismatch",
+      "id": "90011",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Loosely Scoped Cookie",
+      "id": "90033",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Absence of Anti-CSRF Tokens",
+      "id": "10202",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Information Disclosure - Debug Error Messages",
+      "id": "10023",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Information Disclosure - Sensitive Informations in URL",
+      "id": "10024",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Information Disclosure - Sensitive Information in HTTP Referrer Header",
+      "id": "10025",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Information Disclosure - Suspicious Comments",
+      "id": "10027",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Weak Authentication Method",
+      "id": "10105",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Insecure JSF ViewState",
+      "id": "90001",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "HTTP Parameter Override",
+      "id": "10026",
+      "enabled": "true",
+      "quality": "beta"
+    },
+    {
+      "alertThreshold": "DEFAULT",
+      "name": "Viewstate Scanner",
+      "id": "10032",
+      "enabled": "true",
+      "quality": "beta"
+    }
+  ]
+}

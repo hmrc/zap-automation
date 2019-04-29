@@ -41,6 +41,10 @@ class ZapSetUp(zapClient: ZapClient) {
     ZapContext(contextId, contextName, policyName)
   }
 
+  def checkMissingScanners(): Option[List[Scanner]] = {
+    None
+  }
+
   def setUpPolicy(implicit zapContext: ZapContext): Unit = {
     val scannersToDisableForUiTesting = "42,30001,30002,30003,40018,40020,40022,90001"
     val scannersToEnableForApiTesting = "0,2,3,6,7,42,10010,10011,10012,10015,10016,10017,10019,10020,10021,10023,10024,10025,10026,10027,10032,10040,10045,10048,10095,10105,10202,20012,20014,20015,20016,20017,20018,20019,30001,30002,30003,40003,40008,40009,40012,40013,40014,40016,40017,40018,40019,40020,40021,40022,40023,50000,50001,90001,90011,90019,90020,90021,90022,90023,90024,90025,90028"
@@ -74,3 +78,11 @@ class ZapSetUp(zapClient: ZapClient) {
 }
 
 case class ZapContext(id: String, name: String, policy: String)
+
+case class Scanner(id: String, name: String, scannerType: ScannerType)
+
+sealed trait ScannerType
+
+case object ActiveScan extends ScannerType
+
+case object PassiveScan extends ScannerType

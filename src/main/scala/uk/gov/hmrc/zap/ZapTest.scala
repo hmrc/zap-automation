@@ -41,6 +41,7 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
       healthCheck(zapConfiguration.testUrl)
     }
     zapSetup.setConnectionTimeout()
+    zapSetup.checkMissingScanners
     zapSetup.setUpPolicy
     zapSetup.setUpContext
   }
