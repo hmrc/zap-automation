@@ -24,7 +24,7 @@ import uk.gov.hmrc.zap.logger.ZapLogger._
 object ZapReport {
 
   def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus,
-                         activeScanStatus: ScanStatus, missingScanners: Option[List[Scanner]] = None): String = {
+                         activeScanStatus: ScanStatus, missingScanners: List[Scanner]): String = {
     report.html.index(relevantAlerts, failureThreshold, spiderScanStatus, activeScanStatus, missingScanners).toString()
   }
 

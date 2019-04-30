@@ -18,7 +18,7 @@
 @import uk.gov.hmrc.zap.api.ScanStatus
 
 @import uk.gov.hmrc.zap.api.Scanner
-@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus, activeScanStatus: ScanStatus, missingScanners: Option[List[Scanner]])
+@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus, activeScanStatus: ScanStatus, missingScanners: List[Scanner])
 
 <html>
     <head>
@@ -90,6 +90,28 @@
         </h1>
         <p>
         </p>
+        <div class="spacer-lg"></div>
+        @if(missingScanners.nonEmpty) {
+            <h3 id="missing-scanners-h3"> Scanners not Configured</h3>
+            <table width="45%" id="missing-scanners-header" class="summary">
+                <tr bgcolor="#666666">
+                    <th width="25%" height="24">ScannerId</th>
+                    <th width="50%" align="center">Name</th>
+                    <th width="25%" align="center">Scanner Type</th>
+                </tr>
+            </table>
+        }
+
+        @for(scanner <- missingScanners) {
+            <table width="45%" class="summary">
+                <tr bgcolor="#e8e8e8" type = "missing-scanners">
+                    <td width="25%" height="24" align="left">@{scanner.id}</td>
+                    <td width="50%" align="left">@{scanner.name}</td>
+                    <td width="25%" align="left">@{scanner.quality}</td>
+                </tr>
+            </table>
+        }
+        <div class="spacer-lg"></div>
         <h3>Summary of Alerts</h3>
         <table width="45%" class="summary">
             <tr bgcolor="#666666">
@@ -110,23 +132,6 @@
             </tr>
         </table>
         <div class="spacer-lg"></div>
-        @(missingScanners match {
-            case Some(scanners) => {
-                <h1>Scanners not configured</h1>
-
-                <table width="45%" class="missingScanners">
-                @{for (scanner <- scanners)
-                    <tr id="9999" bgcolor="#666666">
-                        <th width="25%" height="24">id</th>
-                        <th width="50%" align="center">name</th>
-                        <th width="25%" align="center">type</th>
-                    </tr>
-                }
-                </table>
-
-            }
-            case None => ()
-        })
         <h3>Summary of Scan</h3>
         <table width="45%" class="summary">
             <tr bgcolor="#666666">

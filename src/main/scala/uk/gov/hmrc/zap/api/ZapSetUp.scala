@@ -18,7 +18,7 @@ package uk.gov.hmrc.zap.api
 
 import java.util.UUID
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.logger.ZapLogger.log
 
@@ -26,6 +26,9 @@ class ZapSetUp(zapClient: ZapClient) {
 
   import zapClient._
   import zapClient.zapConfiguration._
+
+  implicit val scannerReads: Reads[Scanner] = Json.reads[Scanner]
+
 
   def initialize(): ZapContext = {
 
@@ -41,8 +44,13 @@ class ZapSetUp(zapClient: ZapClient) {
     ZapContext(contextId, contextName, policyName)
   }
 
-  def checkMissingScanners(): Option[List[Scanner]] = {
-    None
+  def checkMissingScanners(): List[Scanner] = {
+    val pscanResponse = callZapApi("/json/pscan/view/scanners")
+    val ascanResponse = callZapApi("/json/ascan/view/scanners")
+
+    val passiveScanners = (Json.parse(pscanResponse) \ "scanners").as[List[Scanner]]
+    val activeScanners = (Json.parse(ascanResponse) \ "scanners").as[List[Scanner]]
+     passiveScanners
   }
 
   def setUpPolicy(implicit zapContext: ZapContext): Unit = {
@@ -79,10 +87,10 @@ class ZapSetUp(zapClient: ZapClient) {
 
 case class ZapContext(id: String, name: String, policy: String)
 
-case class Scanner(id: String, name: String, scannerType: ScannerType)
+case class Scanner(alertThreshold: String = "", id: String = "", name: String = "", enabled: String = "", quality: String = "")
 
-sealed trait ScannerType
-
-case object ActiveScan extends ScannerType
-
-case object PassiveScan extends ScannerType
+//sealed trait ScannerType
+//
+//case object ActiveScan extends ScannerType
+//
+//case object PassiveScan extends ScannerType

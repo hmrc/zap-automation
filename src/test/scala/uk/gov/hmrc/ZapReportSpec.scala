@@ -19,7 +19,7 @@ package uk.gov.hmrc
 import com.typesafe.config.{Config, ConfigFactory}
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.zap.ZapReport._
-import uk.gov.hmrc.zap.api.{PassiveScan, ScanCompleted, ScanNotCompleted, Scanner, ZapAlert}
+import uk.gov.hmrc.zap.api.{ScanCompleted, ScanNotCompleted, Scanner, ZapAlert}
 import uk.gov.hmrc.zap.client.HttpClient
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
@@ -35,17 +35,20 @@ class ZapReportSpec extends BaseSpec {
     val threshold = "AUniqueThreshold"
     val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     val zapConfiguration = new ZapConfiguration(config)
+    val missingScanners: List[Scanner] = List()
   }
 
   "html report" should {
     "should contain the failure threshold so that " in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, threshold, spiderScanStatus = ScanCompleted, activeScanStatus = ScanNotCompleted)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, threshold, spiderScanStatus = ScanCompleted,
+        activeScanStatus = ScanNotCompleted, missingScanners)
 
       reportHtmlAsString should include("AUniqueThreshold")
     }
 
     "should contain the correct alert count by risk in the Summary of Alerts table" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanNotCompleted)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold",
+        spiderScanStatus = ScanCompleted, activeScanStatus = ScanNotCompleted, missingScanners)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "summary-high-count").text shouldBe "1"
@@ -55,7 +58,8 @@ class ZapReportSpec extends BaseSpec {
     }
 
     "should show the correct scan status in the Summary of Scan table when spiderScan and activeScan is not completed" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanNotCompleted, activeScanStatus = ScanNotCompleted)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold",
+        spiderScanStatus = ScanNotCompleted, activeScanStatus = ScanNotCompleted, missingScanners)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "passive-scan").text shouldBe "Run"
@@ -64,7 +68,8 @@ class ZapReportSpec extends BaseSpec {
     }
 
     "should show the correct scan status in the Summary of Scan table when spiderScan and ActiveScan is completed" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold",
+        spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, missingScanners)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "id", "passive-scan").text shouldBe "Run"
@@ -73,26 +78,34 @@ class ZapReportSpec extends BaseSpec {
     }
 
     "should display the details of 4 alerts" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold",
+        spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, missingScanners)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
       getByAtt(reportXml, "type", "alert-details").size shouldBe 4
     }
 
     "should display missing scanners when all required scanners are not configured" in new TestSetup {
-      val missingScanner: List[Scanner] = List(Scanner("9999", "TestScanner", PassiveScan), Scanner("10000", "TestScanner", PassiveScan))
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, Some(missingScanner))
+      override val missingScanners: List[Scanner] =
+        List(Scanner("9999", "TestScanner", "Passive Scan"), Scanner("10000", "TestScanner", "Passive Scan"))
+
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold",
+        spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, missingScanners)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
-      getByAtt(reportXml, "id", "9999").size shouldBe 2
+      getByAtt(reportXml, "id", "missing-scanners-h3").size shouldBe 1
+      getByAtt(reportXml, "id", "missing-scanners-header").size shouldBe 1
+      getByAtt(reportXml, "type", "missing-scanners").size shouldBe 2
     }
 
     "should not display missing scanners list when all required scanners configured" in new TestSetup {
-      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold", spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, None)
+      val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold",
+        spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, missingScanners)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
-      getByAtt(reportXml, "id", "missing-scanners").size shouldBe 0
       getByAtt(reportXml, "type", "missing-scanners").size shouldBe 0
+      getByAtt(reportXml, "id", "missing-scanners-h3").size shouldBe 0
+      getByAtt(reportXml, "id", "missing-scanners-header").size shouldBe 0
     }
 
   }
