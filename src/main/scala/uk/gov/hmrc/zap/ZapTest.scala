@@ -59,7 +59,7 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
 
   private def createTestReport(): Unit = {
     writeToFile(generateHtmlReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold,
-      zapScan.spiderRunStatus, zapScan.activeScanStatus, List()))
+      zapScan.spiderRunStatus, zapScan.activeScanStatus, zapSetup.checkMissingScanners))
   }
 }
 

@@ -125,7 +125,7 @@ class ZapAlertsSpec extends BaseSpec {
       )
 
       override lazy val config: Config = updateTestConfigWith(
-        """defaultScanners    = ["50001"]""".stripMargin)
+        """defaultScanners.passive    = [{"id":"50001", "name":"Test Scanner"}]""".stripMargin)
 
       val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 1
@@ -142,7 +142,7 @@ class ZapAlertsSpec extends BaseSpec {
       )
 
             override lazy val config: Config = updateTestConfigWith(
-              """defaultScanners    = ["50001"]
+              """defaultScanners.passive    = [{"id": "50001","name":"Test Scanner"}]
                 |additionalScanners = ["50002"]""".stripMargin)
 
       val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
@@ -158,7 +158,7 @@ class ZapAlertsSpec extends BaseSpec {
       )
 
       override lazy val config: Config = updateTestConfigWith(
-        """defaultScanners    = ["50001"]
+        """defaultScanners.passive    = [{"id":"50001", "name":"Test Scanner"}]
           |ignoreScanners     = ["50002"]""".stripMargin)
 
       val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)

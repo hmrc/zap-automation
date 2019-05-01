@@ -29,6 +29,7 @@ class ZapSetUp(zapClient: ZapClient) {
 
   implicit val scannerReads: Reads[Scanner] = Json.reads[Scanner]
 
+  lazy val checkMissingScanners: List[Scanner] = checkScannerSetup()
 
   def initialize(): ZapContext = {
 
@@ -44,13 +45,20 @@ class ZapSetUp(zapClient: ZapClient) {
     ZapContext(contextId, contextName, policyName)
   }
 
-  def checkMissingScanners(): List[Scanner] = {
+  def checkScannerSetup(): List[Scanner] = {
     val pscanResponse = callZapApi("/json/pscan/view/scanners")
     val ascanResponse = callZapApi("/json/ascan/view/scanners")
 
-    val passiveScanners = (Json.parse(pscanResponse) \ "scanners").as[List[Scanner]]
-    val activeScanners = (Json.parse(ascanResponse) \ "scanners").as[List[Scanner]]
-     passiveScanners
+    val installedPassiveScannersIds = (Json.parse(pscanResponse) \ "scanners").as[List[Scanner]].map(scanner => scanner.id)
+    val installedActiveScannerIds: List[String] = (Json.parse(ascanResponse) \ "scanners").as[List[Scanner]].map(scanner => scanner.id)
+
+    val requiredPassiveScanners: List[Scanner] = passiveScanners.map(config => Scanner(id=config.getString("id"), name = config.getString("name")))
+    val requiredActiveScanners: List[Scanner] = activeScanners.map(config => Scanner(id=config.getString("id"), name = config.getString("name")))
+
+   val missingPassiveScanners = requiredPassiveScanners.filterNot(requiredScannerId => installedPassiveScannersIds.contains(requiredScannerId.id))
+   val missingActiveScanners = requiredActiveScanners.filterNot(requiredScannerId => installedActiveScannerIds.contains(requiredScannerId.id))
+
+    missingPassiveScanners ++ missingActiveScanners
   }
 
   def setUpPolicy(implicit zapContext: ZapContext): Unit = {
@@ -88,9 +96,3 @@ class ZapSetUp(zapClient: ZapClient) {
 case class ZapContext(id: String, name: String, policy: String)
 
 case class Scanner(alertThreshold: String = "", id: String = "", name: String = "", enabled: String = "", quality: String = "")
-
-//sealed trait ScannerType
-//
-//case object ActiveScan extends ScannerType
-//
-//case object PassiveScan extends ScannerType

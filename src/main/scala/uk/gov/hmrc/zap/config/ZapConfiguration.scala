@@ -59,11 +59,13 @@ class ZapConfiguration(userConfig: Config) {
 
   def customRiskConf: List[Config] = zapConfig.getConfigList("customRiskConf").toList
 
-  def defaultScanners: Set[String] = zapConfig.getStringList("defaultScanners").toSet
+  def passiveScanners: List[Config] = zapConfig.getConfigList("defaultScanners.passive").toList
 
-  def additionalScanners: Set[String] = zapConfig.getStringList("additionalScanners").toSet
+  def activeScanners: List[Config] = zapConfig.getConfigList("defaultScanners.active").toList
 
-  def ignoreScanners: Set[String] = zapConfig.getStringList("ignoreScanners").toSet
+  def additionalScanners: List[String] = zapConfig.getStringList("additionalScanners").toList
+
+  def ignoreScanners: List[String] = zapConfig.getStringList("ignoreScanners").toList
 
   def debugHealthCheck: Boolean = zapConfig.getBoolean("debug.healthCheck")
 

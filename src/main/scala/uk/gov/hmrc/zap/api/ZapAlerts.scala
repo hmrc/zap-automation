@@ -34,7 +34,7 @@ class ZapAlerts(zapClient: ZapClient) {
       .filterNot(zapAlert => alertsToIgnore().exists(f => f.matches(zapAlert)))
       .filterNot(zapAlert => ignoreOptimizelyAlerts && zapAlert.evidence.contains("optimizely"))
       .filter { zapAlert =>
-        val relevantScanners = (defaultScanners ++ additionalScanners).diff(ignoreScanners)
+        val relevantScanners = (passiveScanners.map(config => config.getString("id")) ++ activeScanners.map(config => config.getString("id")) ++ additionalScanners).diff(ignoreScanners)
         relevantScanners.contains(zapAlert.pluginId) || zapAlert.pluginId.isEmpty
       }
 

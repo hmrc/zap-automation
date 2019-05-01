@@ -87,7 +87,7 @@ class ZapReportSpec extends BaseSpec {
 
     "should display missing scanners when all required scanners are not configured" in new TestSetup {
       override val missingScanners: List[Scanner] =
-        List(Scanner("9999", "TestScanner", "Passive Scan"), Scanner("10000", "TestScanner", "Passive Scan"))
+        List(Scanner("9999", "TestScanner1", "Passive Scan"), Scanner("10000", "TestScanner2", "Passive Scan"))
 
       val reportHtmlAsString: String = generateHtmlReport(alerts, "AUniqueThreshold",
         spiderScanStatus = ScanCompleted, activeScanStatus = ScanCompleted, missingScanners)
