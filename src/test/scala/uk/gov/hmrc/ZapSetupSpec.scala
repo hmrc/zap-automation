@@ -45,6 +45,7 @@ class ZapSetupSpec extends BaseSpec {
   "setUpContext" should {
 
     "set up the context for a given context name " in new TestSetup {
+
       import zapConfiguration._
 
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
@@ -100,26 +101,29 @@ class ZapSetupSpec extends BaseSpec {
     }
   }
 
-  "checkMissingScanners should be empty when all the required scanners are configured" in new TestSetup {
-    when(httpClient.get(any(), any(), any())).thenReturn((200,
-      """{"scanners": [
-{
-"alertThreshold": "DEFAULT",
-"name": "Script Passive Scan Rules",
-"id": "50001",
-"enabled": "true",
-"quality": "release"
-},
-{
-"alertThreshold": "DEFAULT",
-"name": "Stats Passive Scan Rule",
-"id": "50003",
-"enabled": "true",
-"quality": "release"
-}]}"""))
+  "checkMissingScanners should be empty when all the required scanners are available and enabled" in new TestSetup {
 
-    override lazy val config: Config = updateTestConfigWith(
-      """defaultScanners.passive    = [{"id":"50001", "name":"testScanner"}]""".stripMargin)
+    override lazy val config: Config = updateTestConfigWith("""defaultScanners.passive = [{"id":"50001", "name":"testScanner"}]""".stripMargin)
+
+    when(httpClient.get(any(), any(), any())).thenReturn((200, """{
+                                                                 |   "scanners":[
+                                                                 |      {
+                                                                 |         "alertThreshold":"DEFAULT",
+                                                                 |         "name":"Script Passive Scan Rules",
+                                                                 |         "id":"50001",
+                                                                 |         "enabled":"true",
+                                                                 |         "quality":"release"
+                                                                 |      },
+                                                                 |      {
+                                                                 |         "alertThreshold":"DEFAULT",
+                                                                 |         "name":"Stats Passive Scan Rule",
+                                                                 |         "id":"50003",
+                                                                 |         "enabled":"true",
+                                                                 |         "quality":"release"
+                                                                 |      }
+                                                                 |   ]
+                                                                 |}""".stripMargin))
+
     val missingScanners: List[Scanner] = zapSetUp.checkScannerSetup()
 
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/pscan/view/scanners")
@@ -127,25 +131,66 @@ class ZapSetupSpec extends BaseSpec {
     missingScanners shouldBe empty
   }
 
+  "checkMissingScanners should return scannerIds that are available but not enabled" in new TestSetup {
+    override lazy val config: Config = updateTestConfigWith("""defaultScanners.passive = [{
+                                                              |   "id":"50001",
+                                                              |   "name":"testScanner"
+                                                              |},
+                                                              |{
+                                                              |   "id":"50003",
+                                                              |   "name":"disabledScanner"
+                                                              |}]""".stripMargin)
+
+    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{
+                                                                |   "scanners":[
+                                                                |      {
+                                                                |         "alertThreshold":"DEFAULT",
+                                                                |         "name":"Script Passive Scan Rules",
+                                                                |         "id":"50001",
+                                                                |         "enabled":"true",
+                                                                |         "quality":"release"
+                                                                |      },
+                                                                |      {
+                                                                |         "alertThreshold":"DEFAULT",
+                                                                |         "name":"Stats Passive Scan Rule",
+                                                                |         "id":"50003",
+                                                                |         "enabled":"false",
+                                                                |         "quality":"release"
+                                                                |      }
+                                                                |   ]
+                                                                |}""".stripMargin))
+
+
+    val missingScanners: List[Scanner] = zapSetUp.checkScannerSetup()
+
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/pscan/view/scanners")
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/ascan/view/scanners")
+    missingScanners.head.id shouldBe "50003"
+    missingScanners.size shouldBe 1
+  }
+
+
   "checkMissingScanners should return list of required scanners that are not configured" in new TestSetup {
 
     override lazy val config: Config = updateTestConfigWith("""defaultScanners.passive=[{"id":"99999", "name":"Test Scanner"}]""")
-    when(httpClient.get(any(), any(), any())).thenReturn((200,
-      """{"scanners": [
-{
-"alertThreshold": "DEFAULT",
-"name": "Script Passive Scan Rules",
-"id": "50001",
-"enabled": "true",
-"quality": "release"
-},
-{
-"alertThreshold": "DEFAULT",
-"name": "Stats Passive Scan Rule",
-"id": "50003",
-"enabled": "true",
-"quality": "release"
-}]}"""))
+    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{
+                                                                |   "scanners":[
+                                                                |      {
+                                                                |         "alertThreshold":"DEFAULT",
+                                                                |         "name":"Script Passive Scan Rules",
+                                                                |         "id":"50001",
+                                                                |         "enabled":"true",
+                                                                |         "quality":"release"
+                                                                |      },
+                                                                |      {
+                                                                |         "alertThreshold":"DEFAULT",
+                                                                |         "name":"Stats Passive Scan Rule",
+                                                                |         "id":"50003",
+                                                                |         "enabled":"true",
+                                                                |         "quality":"release"
+                                                                |      }
+                                                                |   ]
+                                                                |}""".stripMargin))
     val missingScanners: List[Scanner] = zapSetUp.checkScannerSetup()
 
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/pscan/view/scanners")
@@ -154,6 +199,4 @@ class ZapSetupSpec extends BaseSpec {
     missingScanners.head.id shouldBe "99999"
     missingScanners.head.name shouldBe "Test Scanner"
   }
-
-
 }

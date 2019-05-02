@@ -99,18 +99,17 @@
                     <th width="50%" align="center">Name</th>
                     <th width="25%" align="center">Scanner Type</th>
                 </tr>
+                @for(scanner <- missingScanners) {
+                        <tr bgcolor="#e8e8e8" type = "missing-scanners">
+                            <td width="25%" height="24" align="left">@{scanner.id}</td>
+                            <td width="50%" align="left">@{scanner.name}</td>
+                            <td width="25%" align="left">@{scanner.scannerType}</td>
+                        </tr>
+                }
             </table>
         }
 
-        @for(scanner <- missingScanners) {
-            <table width="45%" class="summary">
-                <tr bgcolor="#e8e8e8" type = "missing-scanners">
-                    <td width="25%" height="24" align="left">@{scanner.id}</td>
-                    <td width="50%" align="left">@{scanner.name}</td>
-                    <td width="25%" align="left">@{scanner.quality}</td>
-                </tr>
-            </table>
-        }
+
         <div class="spacer-lg"></div>
         <h3>Summary of Alerts</h3>
         <table width="45%" class="summary">

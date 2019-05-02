@@ -18,7 +18,7 @@ package uk.gov.hmrc.zap.api
 
 import java.util.UUID
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{JsValue, Json, Reads}
 import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.logger.ZapLogger.log
 
@@ -49,17 +49,30 @@ class ZapSetUp(zapClient: ZapClient) {
     val pscanResponse = callZapApi("/json/pscan/view/scanners")
     val ascanResponse = callZapApi("/json/ascan/view/scanners")
 
-    val installedPassiveScannersIds = (Json.parse(pscanResponse) \ "scanners").as[List[Scanner]].map(scanner => scanner.id)
-    val installedActiveScannerIds: List[String] = (Json.parse(ascanResponse) \ "scanners").as[List[Scanner]].map(scanner => scanner.id)
+    val missingScanners: List[Scanner] =
+      passiveScanners.filterNot(requiredScannerId => enabledScannerIds(pscanResponse).contains(requiredScannerId.id)) ++
+        activeScanners.filterNot(requiredScannerId => enabledScannerIds(ascanResponse).contains(requiredScannerId.id))
 
-    val requiredPassiveScanners: List[Scanner] = passiveScanners.map(config => Scanner(id=config.getString("id"), name = config.getString("name")))
-    val requiredActiveScanners: List[Scanner] = activeScanners.map(config => Scanner(id=config.getString("id"), name = config.getString("name")))
-
-   val missingPassiveScanners = requiredPassiveScanners.filterNot(requiredScannerId => installedPassiveScannersIds.contains(requiredScannerId.id))
-   val missingActiveScanners = requiredActiveScanners.filterNot(requiredScannerId => installedActiveScannerIds.contains(requiredScannerId.id))
-
-    missingPassiveScanners ++ missingActiveScanners
+    if (missingScanners.nonEmpty) {
+      log.warn("The below required scanners are not enabled. This will affect ZAP results")
+      missingScanners.foreach {
+        scanner =>
+          log.warn(
+            s"""
+             Scanner ID   : ${scanner.id}
+             Name         : ${scanner.name}
+             Scanner Type : ${scanner.scannerType}""")
+      }
+    }
+    missingScanners
   }
+
+  private def enabledScannerIds(zapScannerResponse: String): List[String] = {
+    Json.parse(zapScannerResponse)("scanners").as[List[JsValue]]
+      .filter(scanner => scanner("enabled").as[String] == "true")
+      .map(scanner => scanner("id").as[String])
+  }
+
 
   def setUpPolicy(implicit zapContext: ZapContext): Unit = {
     val scannersToDisableForUiTesting = "42,30001,30002,30003,40018,40020,40022,90001"
@@ -95,4 +108,4 @@ class ZapSetUp(zapClient: ZapClient) {
 
 case class ZapContext(id: String, name: String, policy: String)
 
-case class Scanner(alertThreshold: String = "", id: String = "", name: String = "", enabled: String = "", quality: String = "")
+case class Scanner(id: String, name: String, scannerType: String)
