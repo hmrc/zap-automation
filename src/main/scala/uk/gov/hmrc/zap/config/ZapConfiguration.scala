@@ -61,13 +61,13 @@ class ZapConfiguration(userConfig: Config) {
   def customRiskConf: List[Config] = zapConfig.getConfigList("customRiskConf").toList
 
   def passiveScanners: List[Scanner] = {
-    zapConfig.getConfigList("defaultScanners.passive")
+    zapConfig.getConfigList("scanners.passive")
       .toList
       .map(config => Scanner(config.getString("id"), config.getString("name"), "Passive"))
   }
 
   def activeScanners: List[Scanner] = {
-    zapConfig.getConfigList("defaultScanners.active")
+    zapConfig.getConfigList("scanners.active")
       .toList
       .map(config => Scanner(config.getString("id"), config.getString("name"), "Active"))
   }

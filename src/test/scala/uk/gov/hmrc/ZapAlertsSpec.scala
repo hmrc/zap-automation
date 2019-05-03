@@ -115,7 +115,7 @@ class ZapAlertsSpec extends BaseSpec {
       filteredAlerts.size shouldBe 0
     }
 
-    "should only show alerts for scanners that match defaultScanners" in new TestSetup {
+    "should only show alerts for scanners that match scanners" in new TestSetup {
 
       val alerts: List[ZapAlert] = List[ZapAlert](
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", pluginId = "50001"),
@@ -125,7 +125,7 @@ class ZapAlertsSpec extends BaseSpec {
       )
 
       override lazy val config: Config = updateTestConfigWith(
-        """defaultScanners.passive    = [{"id":"50001", "name":"Test Scanner"}]""".stripMargin)
+        """scanners.passive    = [{"id":"50001", "name":"Test Scanner"}]""".stripMargin)
 
       val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 1

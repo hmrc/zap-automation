@@ -103,7 +103,7 @@ class ZapSetupSpec extends BaseSpec {
 
   "checkMissingScanners should be empty when all the required scanners are available and enabled" in new TestSetup {
 
-    override lazy val config: Config = updateTestConfigWith("""defaultScanners.passive = [{"id":"50001", "name":"testScanner"}]""".stripMargin)
+    override lazy val config: Config = updateTestConfigWith("""scanners.passive = [{"id":"50001", "name":"testScanner"}]""".stripMargin)
 
     when(httpClient.get(any(), any(), any())).thenReturn((200, """{
                                                                  |   "scanners":[
@@ -132,7 +132,7 @@ class ZapSetupSpec extends BaseSpec {
   }
 
   "checkMissingScanners should return scannerIds that are available but not enabled" in new TestSetup {
-    override lazy val config: Config = updateTestConfigWith("""defaultScanners.passive = [{
+    override lazy val config: Config = updateTestConfigWith("""scanners.passive = [{
                                                               |   "id":"50001",
                                                               |   "name":"testScanner"
                                                               |},
@@ -172,7 +172,7 @@ class ZapSetupSpec extends BaseSpec {
 
   "checkMissingScanners should return list of required scanners that are not configured" in new TestSetup {
 
-    override lazy val config: Config = updateTestConfigWith("""defaultScanners.passive=[{"id":"99999", "name":"Test Scanner"}]""")
+    override lazy val config: Config = updateTestConfigWith("""scanners.passive=[{"id":"99999", "name":"Test Scanner"}]""")
     when(httpClient.get(any(), any(), any())).thenReturn((200,"""{
                                                                 |   "scanners":[
                                                                 |      {

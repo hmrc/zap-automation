@@ -64,6 +64,7 @@ The output of a successful run will look something like this:
 A HTML report is created at `target/zap-reports/ZapReport.html` irrespective of whether or not vulnerabilities were found.
 
 The report contains the following sections:
+- **Scanners not enabled**: List of required scanners that are not installed/enabled in Zap 
 - **Summary of Alerts**: a summary of the vulnerabilities found during the scan
 - **Summary of Scans**: which of the scans executed (passive/spider/active)
 - **Failure Threshold**: the configured failure threshold
@@ -86,6 +87,24 @@ The below table provides a description of each Alert detail:
 | Reference(s) | Future use      |
 | Internal References(s) | Future use      |
 
+## Scanners not enabled
+A fresh installation of ZAP does not include all the required scanners. When the available scanners do not match with
+the required scanners listed in [reference.conf](src/main/resources/reference.conf), the library logs a `WARN` message 
+with the missing scanners' information.
+
+An example:
+ ```
+ [pool-6-thread-5] WARN [ZAP Logger] - The below required scanners are not enabled. This will affect ZAP results
+    [pool-6-thread-5] WARN [ZAP Logger] - 
+                 Scanner ID   : 90001
+                 Name         : Insecure JSF ViewState
+                 Scanner Type : Passive
+  ```
+                 
+This information is also included in the HTML report under `Scanners not enabled`. Including these scanners in ZAP 
+setup will address this warning and ensure accurate results.  
+
+
 ## Development
 ### Run the unit tests for the library
 ```scala
@@ -94,6 +113,11 @@ sbt test
 
 ### Debugging
 The library provides various debug flags for local development of the library.
+
+### Adding new scanners:
+The scanners configuration available in [reference.conf](src/main/resources/reference.conf) is used to filter ZAP results. 
+If a scanner is not listed in this config, then the alerts for this scanner will not be included in the HTML report. 
+Update this configuration when new scanners are added to ZAP. 
 
 ### Issues
 Please raise any issues or feedback [here](issues/)
