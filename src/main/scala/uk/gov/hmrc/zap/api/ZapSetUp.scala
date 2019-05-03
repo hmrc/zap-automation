@@ -54,14 +54,14 @@ class ZapSetUp(zapClient: ZapClient) {
         activeScanners.filterNot(requiredScannerId => enabledScannerIds(ascanResponse).contains(requiredScannerId.id))
 
     if (missingScanners.nonEmpty) {
-      log.warn("The below required scanners are not enabled. This will affect ZAP results")
+      log.warn("\033[31mThe below required scanners are not enabled. This will affect ZAP results\033[0m")
       missingScanners.foreach {
         scanner =>
           log.warn(
-            s"""
+            s"""\033[31m
              Scanner ID   : ${scanner.id}
              Name         : ${scanner.name}
-             Scanner Type : ${scanner.scannerType}""")
+             Scanner Type : ${scanner.scannerType} \033[0m""")
       }
     }
     missingScanners
