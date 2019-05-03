@@ -132,40 +132,6 @@ class ZapAlertsSpec extends BaseSpec {
       filteredAlerts.head.pluginId shouldBe "50001"
     }
 
-    "should show alerts from scanners in additionalScanners" in new TestSetup {
-
-      val alerts: List[ZapAlert] = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", pluginId = "50001"),
-        ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C4/here", pluginId = "50002"),
-        ZapAlert(cweid = "18", url = "http://localhost:9999/hello/here", pluginId = "90035"),
-        ZapAlert(cweid = "19", url = "http://localhost:9999/hello/here", pluginId = "90036")
-      )
-
-            override lazy val config: Config = updateTestConfigWith(
-              """defaultScanners.passive    = [{"id": "50001","name":"Test Scanner"}]
-                |additionalScanners = ["50002"]""".stripMargin)
-
-      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 2
-      filteredAlerts.map(_.pluginId) shouldBe List("50001", "50002")
-    }
-
-    "should not show alerts from scanners in ignoreScanners" in new TestSetup {
-
-      val alerts: List[ZapAlert] = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", pluginId = "50001"),
-        ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C4/here", pluginId = "50002")
-      )
-
-      override lazy val config: Config = updateTestConfigWith(
-        """defaultScanners.passive    = [{"id":"50001", "name":"Test Scanner"}]
-          |ignoreScanners     = ["50002"]""".stripMargin)
-
-      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 1
-      filteredAlerts.head.pluginId shouldBe "50001"
-    }
-
     "should not filter out alerts that match url but not cweid of the ignored alerts list where the url is a regex" in new TestSetup {
       val alerts: List[ZapAlert] = List[ZapAlert](
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here"),

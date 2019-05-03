@@ -29,15 +29,16 @@ class ZapAlerts(zapClient: ZapClient) {
 
   implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
 
-  def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] =
+  def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
+    val relevantScannerIds = passiveScanners.map(scanner => scanner.id) ++ activeScanners.map(scanner => scanner.id)
+
     allAlerts
       .filterNot(zapAlert => alertsToIgnore().exists(f => f.matches(zapAlert)))
       .filterNot(zapAlert => ignoreOptimizelyAlerts && zapAlert.evidence.contains("optimizely"))
       .filter { zapAlert =>
-        val relevantScanners = (passiveScanners.map(scanner => scanner.id) ++ activeScanners.map(scanner => scanner.id) ++ additionalScanners).diff(ignoreScanners)
-        relevantScanners.contains(zapAlert.pluginId) || zapAlert.pluginId.isEmpty
+        relevantScannerIds.contains(zapAlert.pluginId) || zapAlert.pluginId.isEmpty
       }
-
+  }
   def parsedAlerts: List[ZapAlert] = {
     if (alertUrlsToReport.isEmpty)
       getAlerts()

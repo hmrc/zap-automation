@@ -72,12 +72,6 @@ class ZapConfiguration(userConfig: Config) {
       .map(config => Scanner(config.getString("id"), config.getString("name"), "Active"))
   }
 
-
-// TODO: delete
-  def additionalScanners: List[String] = zapConfig.getStringList("additionalScanners").toList
-
-  def ignoreScanners: List[String] = zapConfig.getStringList("ignoreScanners").toList
-
   def debugHealthCheck: Boolean = zapConfig.getBoolean("debug.healthCheck")
 
   def debugTearDown: Boolean = zapConfig.getBoolean("debug.tearDown")
