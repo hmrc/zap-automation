@@ -27,8 +27,6 @@ class ZapSetUp(zapClient: ZapClient) {
   import zapClient._
   import zapClient.zapConfiguration._
 
-  implicit val scannerReads: Reads[Scanner] = Json.reads[Scanner]
-
   lazy val checkMissingScanners: List[Scanner] = checkScannerSetup()
 
   def initialize(): ZapContext = {
