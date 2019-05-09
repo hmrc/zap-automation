@@ -30,7 +30,7 @@ class ZapAlerts(zapClient: ZapClient) {
   implicit val zapAlertReads: Reads[ZapAlert] = Json.reads[ZapAlert]
 
   def filterAlerts(allAlerts: List[ZapAlert]): List[ZapAlert] = {
-    val relevantScannerIds = passiveScanners.map(scanner => scanner.id) ++ activeScanners.map(scanner => scanner.id)
+    val relevantScannerIds = passiveScanners.map(_.id) ++ activeScanners.map(_.id)
 
     allAlerts
       .filterNot(zapAlert => alertsToIgnore().exists(f => f.matches(zapAlert)))

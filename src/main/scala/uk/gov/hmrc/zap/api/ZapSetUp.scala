@@ -18,7 +18,7 @@ package uk.gov.hmrc.zap.api
 
 import java.util.UUID
 
-import play.api.libs.json.{JsValue, Json, Reads}
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.logger.ZapLogger.log
 
