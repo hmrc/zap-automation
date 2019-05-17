@@ -115,9 +115,10 @@ sbt test
 The library provides various debug flags for local development of the library.
 
 ### Adding new scanners:
-The scanners configuration available in [reference.conf](src/main/resources/reference.conf) is used to filter ZAP results. 
-If a scanner is not listed in this config, then the alerts for this scanner will not be included in the HTML report. 
-Update this configuration when new scanners are added to ZAP. 
+The scanners' configuration, available in [reference.conf](src/main/resources/reference.conf), is used to filter ZAP results. 
+If a scanner is not listed in this config, then the alerts for this scanner will not be included in the HTML report that zap-automation generates at the end of a run.
+
+Be sure to update this configuration when new scanners are added to ZAP. 
 
 ### Issues
 Please raise any issues or feedback [here](issues/)
