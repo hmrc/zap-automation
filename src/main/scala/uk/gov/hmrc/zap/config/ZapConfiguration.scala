@@ -17,6 +17,7 @@
 package uk.gov.hmrc.zap.config
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import uk.gov.hmrc.zap.api.Scanner
 import uk.gov.hmrc.zap.logger.ZapLogger._
 
 import scala.collection.JavaConversions._
@@ -59,11 +60,17 @@ class ZapConfiguration(userConfig: Config) {
 
   def customRiskConf: List[Config] = zapConfig.getConfigList("customRiskConf").toList
 
-  def defaultScanners: Set[String] = zapConfig.getStringList("defaultScanners").toSet
+  def passiveScanners: List[Scanner] = {
+    zapConfig.getConfigList("scanners.passive")
+      .toList
+      .map(config => Scanner(config.getString("id"), config.getString("name"), "Passive"))
+  }
 
-  def additionalScanners: Set[String] = zapConfig.getStringList("additionalScanners").toSet
-
-  def ignoreScanners: Set[String] = zapConfig.getStringList("ignoreScanners").toSet
+  def activeScanners: List[Scanner] = {
+    zapConfig.getConfigList("scanners.active")
+      .toList
+      .map(config => Scanner(config.getString("id"), config.getString("name"), "Active"))
+  }
 
   def debugHealthCheck: Boolean = zapConfig.getBoolean("debug.healthCheck")
 

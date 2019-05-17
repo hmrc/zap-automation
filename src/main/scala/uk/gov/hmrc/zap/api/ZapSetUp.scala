@@ -18,7 +18,7 @@ package uk.gov.hmrc.zap.api
 
 import java.util.UUID
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.logger.ZapLogger.log
 
@@ -26,6 +26,8 @@ class ZapSetUp(zapClient: ZapClient) {
 
   import zapClient._
   import zapClient.zapConfiguration._
+
+  lazy val checkMissingScanners: List[Scanner] = checkScannerSetup()
 
   def initialize(): ZapContext = {
 
@@ -40,6 +42,35 @@ class ZapSetUp(zapClient: ZapClient) {
     log.info(s"Initialized context. Id: $contextId, name: $contextName, policy: $policyName")
     ZapContext(contextId, contextName, policyName)
   }
+
+  def checkScannerSetup(): List[Scanner] = {
+    val pscanResponse = callZapApi("/json/pscan/view/scanners")
+    val ascanResponse = callZapApi("/json/ascan/view/scanners")
+
+    val missingScanners: List[Scanner] =
+      passiveScanners.filterNot(requiredScannerId => enabledScannerIds(pscanResponse).contains(requiredScannerId.id)) ++
+        activeScanners.filterNot(requiredScannerId => enabledScannerIds(ascanResponse).contains(requiredScannerId.id))
+
+    if (missingScanners.nonEmpty) {
+      log.warn("\033[31mThe below required scanners are not enabled. This will affect ZAP alerts\033[0m")
+      missingScanners.foreach {
+        scanner =>
+          log.warn(
+            s"""\033[31m
+             Scanner ID   : ${scanner.id}
+             Name         : ${scanner.name}
+             Scanner Type : ${scanner.scannerType} \033[0m""")
+      }
+    }
+    missingScanners
+  }
+
+  private def enabledScannerIds(zapScannerResponse: String): List[String] = {
+    Json.parse(zapScannerResponse)("scanners").as[List[JsValue]]
+      .filter(scanner => scanner("enabled").as[String] == "true")
+      .map(scanner => scanner("id").as[String])
+  }
+
 
   def setUpPolicy(implicit zapContext: ZapContext): Unit = {
     val scannersToDisableForUiTesting = "42,30001,30002,30003,40018,40020,40022,90001"
@@ -74,3 +105,5 @@ class ZapSetUp(zapClient: ZapClient) {
 }
 
 case class ZapContext(id: String, name: String, policy: String)
+
+case class Scanner(id: String, name: String, scannerType: String)

@@ -115,7 +115,7 @@ class ZapAlertsSpec extends BaseSpec {
       filteredAlerts.size shouldBe 0
     }
 
-    "should only show alerts for scanners that match defaultScanners" in new TestSetup {
+    "should only show alerts for scanners that match scanners" in new TestSetup {
 
       val alerts: List[ZapAlert] = List[ZapAlert](
         ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", pluginId = "50001"),
@@ -125,41 +125,7 @@ class ZapAlertsSpec extends BaseSpec {
       )
 
       override lazy val config: Config = updateTestConfigWith(
-        """defaultScanners    = ["50001"]""".stripMargin)
-
-      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 1
-      filteredAlerts.head.pluginId shouldBe "50001"
-    }
-
-    "should show alerts from scanners in additionalScanners" in new TestSetup {
-
-      val alerts: List[ZapAlert] = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", pluginId = "50001"),
-        ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C4/here", pluginId = "50002"),
-        ZapAlert(cweid = "18", url = "http://localhost:9999/hello/here", pluginId = "90035"),
-        ZapAlert(cweid = "19", url = "http://localhost:9999/hello/here", pluginId = "90036")
-      )
-
-            override lazy val config: Config = updateTestConfigWith(
-              """defaultScanners    = ["50001"]
-                |additionalScanners = ["50002"]""".stripMargin)
-
-      val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
-      filteredAlerts.size shouldBe 2
-      filteredAlerts.map(_.pluginId) shouldBe List("50001", "50002")
-    }
-
-    "should not show alerts from scanners in ignoreScanners" in new TestSetup {
-
-      val alerts: List[ZapAlert] = List[ZapAlert](
-        ZapAlert(cweid = "16", url = "http://localhost:9999/hello/SB363126A/here", pluginId = "50001"),
-        ZapAlert(cweid = "17", url = "http://localhost:9999/hello/YZ570921C4/here", pluginId = "50002")
-      )
-
-      override lazy val config: Config = updateTestConfigWith(
-        """defaultScanners    = ["50001"]
-          |ignoreScanners     = ["50002"]""".stripMargin)
+        """scanners.passive    = [{"id":"50001", "name":"Test Scanner"}]""".stripMargin)
 
       val filteredAlerts: List[ZapAlert] = zapAlerts.filterAlerts(alerts)
       filteredAlerts.size shouldBe 1

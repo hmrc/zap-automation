@@ -41,6 +41,7 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
       healthCheck(zapConfiguration.testUrl)
     }
     zapSetup.setConnectionTimeout()
+    zapSetup.checkMissingScanners
     zapSetup.setUpPolicy
     zapSetup.setUpContext
   }
@@ -58,7 +59,7 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
 
   private def createTestReport(): Unit = {
     writeToFile(generateHtmlReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold,
-      zapScan.spiderRunStatus, zapScan.activeScanStatus))
+      zapScan.spiderRunStatus, zapScan.activeScanStatus, zapSetup.checkMissingScanners))
   }
 }
 
