@@ -88,8 +88,8 @@ The below table provides a description of each Alert detail:
 | Internal References(s) | Future use      |
 
 ## Scanners not enabled
-A fresh installation of ZAP does not include all the required scanners. When the available scanners do not match with
-the required scanners listed in [reference.conf](src/main/resources/reference.conf), the library logs a `WARN` message 
+A fresh installation of ZAP does not include all of the scanners that we intend HMRC services to assessed against. For this reason, prior to initiating a scan the zap-automation library will query the OWASP ZAP installation for all available scanners. When these scanners do not correlate directly with
+the required scanners listed in [reference.conf](src/main/resources/reference.conf), zap-automation will log a `WARN` message 
 with the missing scanners' information.
 
 An example:
