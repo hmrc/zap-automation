@@ -48,7 +48,7 @@ class ZapOrchestratorSpec extends BaseSpec {
       when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
       when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
-      when(httpClient.get(any(), eqTo("/json/core/view/alerts"), any())).thenReturn((200, """{"alerts": []}"""))
+      when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200, """{"alerts": []}"""))
 
       triggerZapScan()
 
@@ -87,7 +87,7 @@ class ZapOrchestratorSpec extends BaseSpec {
       when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
       when(httpClient.get(any(), eqTo("/json/ascan/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/core/view/alerts"), any())).thenReturn((200, """{"alerts": []}"""))
+      when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200, """{"alerts": []}"""))
 
       triggerZapScan()
       verify(httpClient).get(any(), eqTo("/json/ascan/action/scan"), any())
@@ -116,7 +116,7 @@ class ZapOrchestratorSpec extends BaseSpec {
       when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
       when(httpClient.get(any(), eqTo("/json/ascan/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/core/view/alerts"), any())).thenReturn((200, """{"alerts": [{
+      when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200, """{"alerts": [{
                                                                                             "sourceid": "",
                                                                                             "other": "Other text",
                                                                                             "method": "",

@@ -18,7 +18,7 @@ package uk.gov.hmrc.zap.api
 
 import java.util.UUID
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsString, JsValue, Json}
 import uk.gov.hmrc.zap.client.ZapClient
 import uk.gov.hmrc.zap.logger.ZapLogger.log
 
@@ -101,6 +101,11 @@ class ZapSetUp(zapClient: ZapClient) {
   def setConnectionTimeout(): Unit = {
     callZapApi("/json/core/action/setOptionTimeoutInSecs", "Integer" -> s"$connectionTimeout")
     log.info(s"Zap Connection Timeout set to $connectionTimeout seconds")
+  }
+
+  def findZapVersion: String = {
+   val response = callZapApi("/other/core/other/jsonreport")
+   (Json.parse(response) \ "@version").getOrElse(JsString("ZAP_VERSION_NOT_FOUND")).as[String]
   }
 }
 

@@ -58,8 +58,10 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
   }
 
   private def createTestReport(): Unit = {
+    lazy val zapVersion = zapSetup.findZapVersion
+
     writeToFile(generateHtmlReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold,
-      zapScan.spiderRunStatus, zapScan.activeScanStatus, zapSetup.checkMissingScanners))
+      zapScan.spiderRunStatus, zapScan.activeScanStatus, zapSetup.checkMissingScanners, zapVersion))
   }
 }
 
