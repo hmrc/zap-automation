@@ -18,7 +18,7 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
-import org.mockito.Mockito.{times, verify, when}
+import org.mockito.Mockito.{verify, when}
 import uk.gov.hmrc.zap.api.{Scanner, ZapContext, ZapSetUp}
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
@@ -199,4 +199,23 @@ class ZapSetupSpec extends BaseSpec {
     missingScanners.head.id shouldBe "99999"
     missingScanners.head.name shouldBe "Test Scanner"
   }
+
+  "findZapVersion should return zap version" in new TestSetup {
+
+    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{"@version":"2.8.0"}""".stripMargin))
+    val zapVersion: String = zapSetUp.findZapVersion
+
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "/other/core/other/jsonreport")
+    zapVersion shouldBe "2.8.0"
+  }
+
+  "findZapVersion should return ZAP_VERSION_NOT_FOUND when version not returned by ZAP API" in new TestSetup {
+
+    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{"@NoVersion":""}""".stripMargin))
+    val zapVersion: String = zapSetUp.findZapVersion
+
+    verify(httpClient).get(zapConfiguration.zapBaseUrl, "/other/core/other/jsonreport")
+    zapVersion shouldBe "ZAP_VERSION_NOT_FOUND"
+  }
+
 }

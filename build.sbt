@@ -43,7 +43,7 @@ val testDependencies = Seq(
 lazy val zapAutomation = Project(appName, file("."))
   .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning, SbtTwirl, SbtArtifactory)
   .settings(
-    majorVersion := 1,
+    majorVersion := 2,
     makePublicallyAvailableOnBintray := true,
     scalaVersion := "2.11.12",
     libraryDependencies ++= compileDependencies ++ testDependencies,

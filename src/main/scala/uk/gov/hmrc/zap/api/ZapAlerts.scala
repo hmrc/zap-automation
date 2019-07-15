@@ -39,6 +39,7 @@ class ZapAlerts(zapClient: ZapClient) {
         relevantScannerIds.contains(zapAlert.pluginId) || zapAlert.pluginId.isEmpty
       }
   }
+
   def parsedAlerts: List[ZapAlert] = {
     if (alertUrlsToReport.isEmpty)
       getAlerts()
@@ -56,7 +57,7 @@ class ZapAlerts(zapClient: ZapClient) {
   }
 
   private def getAlerts(baseUrl: String = ""): List[ZapAlert] = {
-    val response: String = callZapApi("/json/core/view/alerts", "baseurl" -> baseUrl)
+    val response: String = callZapApi("/json/alert/view/alerts", "baseurl" -> baseUrl)
     val jsonResponse = Json.parse(response)
     (jsonResponse \ "alerts").as[List[ZapAlert]]
   }

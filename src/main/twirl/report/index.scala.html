@@ -18,7 +18,9 @@
 @import uk.gov.hmrc.zap.api.ScanStatus
 
 @import uk.gov.hmrc.zap.api.Scanner
-@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus, activeScanStatus: ScanStatus, missingScanners: List[Scanner])
+@import play.api.libs.json.JsValue
+@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus, activeScanStatus: ScanStatus,
+        missingScanners: List[Scanner], zapVersion: String)
 
 <html>
     <head>
@@ -90,6 +92,7 @@
         </h1>
         <p>
         </p>
+        <h2>ZAP Version: @{zapVersion}</h2>
         <div class="spacer-lg"></div>
         @if(missingScanners.nonEmpty) {
             <h3 id="missing-scanners-h3"> Scanners not Configured</h3>

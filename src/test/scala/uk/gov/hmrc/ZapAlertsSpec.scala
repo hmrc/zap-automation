@@ -246,7 +246,7 @@ class ZapAlertsSpec extends BaseSpec {
           |    "http://localhost:1234",
           |    "http://localhost:5678"]""")
 
-      when(httpClient.get(any(), eqTo("/json/core/view/alerts"), any())).thenReturn((200,
+      when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200,
       """{
                                                                                       "alerts": [
                                                                                       {
@@ -280,7 +280,7 @@ class ZapAlertsSpec extends BaseSpec {
 
       override lazy val config: Config = updateTestConfigWith("""alertUrlsToReport = []""")
 
-      when(httpClient.get(any(), eqTo("/json/core/view/alerts"), any())).thenReturn((200,
+      when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200,
         """{
                                                                                       "alerts": [
                                                                                       {
