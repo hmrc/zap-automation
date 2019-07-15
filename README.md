@@ -3,6 +3,9 @@
 This scala library is built for use in a [Scalatest](http://www.scalatest.org/) Suite, and provides an abstraction above the [OWASP ZAP API](https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project) which allows for simple configurable execution of spider and active scans. The zap-automation library also produces a report summarising the alerts captured during scans, and can be tuned to fail your test run depending on the severity of the vulnerabilities found.
 
 ## Configuring a test to use zap-automation
+**Note:** `2.x.x` version of the zap-automation library only supports ZAP version `2.8.0`. To run against `2.7.0` version of 
+ZAP use the latest `1.x.x` version of this library.
+
 The below step-by-step guide assumes a running OWASP ZAP instance has already proxied traffic to build the context with which to launch an attack scan.  Visit the following pages for help on how to achieve this with an existing WebDriver journey test suite:
 - [Starting OWASP ZAP](https://github.com/hmrc/zap-automation/wiki/Starting-OWASP-ZAP-for-use-with-zap-automation)
 - [Proxying your Tests via ZAP](https://github.com/hmrc/zap-automation/wiki/Configure-Tests-to-proxy-via-OWASP-ZAP)
