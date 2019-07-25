@@ -14,13 +14,10 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.zap.api.ZapAlert
-@import uk.gov.hmrc.zap.api.ScanStatus
-
-@import uk.gov.hmrc.zap.api.Scanner
+@import uk.gov.hmrc.zap.ZapReport
 @import play.api.libs.json.JsValue
-@(alerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus, activeScanStatus: ScanStatus,
-        missingScanners: List[Scanner], zapVersion: String)
+@(zapReport: ZapReport)
+
 
 <html>
     <head>
@@ -92,9 +89,9 @@
         </h1>
         <p>
         </p>
-        <h2>ZAP Version: @{zapVersion}</h2>
+        <h2>ZAP Version: @{zapReport.zapVersion}</h2>
         <div class="spacer-lg"></div>
-        @if(missingScanners.nonEmpty) {
+        @if(zapReport.missingScanners.nonEmpty) {
             <h3 id="missing-scanners-h3"> Scanners not Configured</h3>
             <table width="45%" id="missing-scanners-header" class="summary">
                 <tr bgcolor="#666666">
@@ -102,7 +99,7 @@
                     <th width="50%" align="center">Name</th>
                     <th width="25%" align="center">Scanner Type</th>
                 </tr>
-                @for(scanner <- missingScanners) {
+                @for(scanner <- zapReport.missingScanners) {
                         <tr bgcolor="#e8e8e8" type = "missing-scanners">
                             <td width="25%" height="24" align="left">@{scanner.id}</td>
                             <td width="50%" align="left">@{scanner.name}</td>
@@ -121,16 +118,16 @@
                     Level</th><th width="55%" align="center">Number of Alerts</th>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td><a href="#high">High</a></td><td id="summary-high-count" align="center">@{alerts.count {_.risk == "High"}}</td>
+                <td><a href="#high">High</a></td><td id="summary-high-count" align="center">@{zapReport.relevantAlerts.count {_.risk == "High"}}</td>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td><a href="#medium">Medium</a></td><td id="summary-medium-count" align="center">@{alerts.count {_.risk == "Medium"}}</td>
+                <td><a href="#medium">Medium</a></td><td id="summary-medium-count" align="center">@{zapReport.relevantAlerts.count {_.risk == "Medium"}}</td>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td><a href="#low">Low</a></td><td id="summary-low-count" align="center">@{alerts.count {_.risk == "Low"}}</td>
+                <td><a href="#low">Low</a></td><td id="summary-low-count" align="center">@{zapReport.relevantAlerts.count {_.risk == "Low"}}</td>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td><a href="#info">Informational</a></td><td id="summary-info-count" align="center">@{alerts.count {_.riskShortName() == "Info"}}</td>
+                <td><a href="#info">Informational</a></td><td id="summary-info-count" align="center">@{zapReport.relevantAlerts.count {_.riskShortName() == "Info"}}</td>
             </tr>
         </table>
         <div class="spacer-lg"></div>
@@ -140,20 +137,20 @@
                 <th width="45%" height="24">Scan</th><th width="55%" align="center">Status</th>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td>Passive</td><td id="passive-scan" align="center">Run</td>
+                <td>Passive</td><td id="passive-scan" align="center">@{zapReport.passiveScanStatus.toString}</td>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td>Spider</td><td id="spider-scan" align="center">@{spiderScanStatus.toString}</td>
+                <td>Spider</td><td id="spider-scan" align="center">@{zapReport.spiderScanStatus.toString}</td>
             </tr>
             <tr bgcolor="#e8e8e8">
-                <td>Active</td><td id="active-scan" align="center">@{activeScanStatus.toString}</td>
+                <td>Active</td><td id="active-scan" align="center">@{zapReport.activeScanStatus.toString}</td>
             </tr>
         </table>
         <div class="spacer-lg"></div>
-        <h3>Failure Threshold: @{failureThreshold}</h3>
+        <h3>Failure Threshold: @{zapReport.failureThreshold}</h3>
         <div class="spacer-lg"></div>
         <h3>Alert Details</h3>
-        @for(a <- alerts) {
+        @for(a <- zapReport.relevantAlerts) {
             <div class="spacer"></div>
             <table id="alert-@{a.id}" type="alert-details" result="@{a.id}" width="100%" class="results">
                 <tr height="24" class="risk-@{a.riskShortName().toLowerCase}"><a name="@{a.riskShortName().toLowerCase}"></a><th width="10%">@{a.risk} (@{a.confidence})</th>

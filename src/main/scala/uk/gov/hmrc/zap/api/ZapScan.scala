@@ -30,6 +30,16 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
   lazy val activeScanStatus: ScanStatus = scanStatus("/json/ascan/view/status")
   lazy val spiderRunStatus: ScanStatus = spiderStatus
 
+  lazy val passiveScanStatus: ScanStatus = {
+    if (urlProxiedForPassiveScan) {
+      ScanCompleted
+    }
+    else{
+      log.error("Test URL did not proxy via ZAP. Check if the browser is configured correctly to proxy via ZAP.")
+      ScanNotCompleted
+    }
+  }
+
   def triggerSpiderScan()(implicit zapContext: ZapContext): String = {
     callZapApi("/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
   }
@@ -56,10 +66,14 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
       recordsToScan
     }
 
-    if (recordsToScan == recordsLeftToScan)
+    if (recordsToScan == recordsLeftToScan) {
+      log.info("Passive Scan completed.")
       ScanCompleted
-    else
+    }
+    else {
+      log.error(s"Spider did not complete within configured duration: $patienceConfigTimeout seconds. Still $recordsToScan records left to scan.")
       ScanNotCompleted
+    }
   }
 
   private def scanStatus(path: String): ScanStatus = {
@@ -92,6 +106,13 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
     }
     result
   }
+
+  private def urlProxiedForPassiveScan: Boolean = {
+    val response = callZapApi("/json/core/view/urls", "baseurl" -> s"$testUrl")
+    val proxiedUrls: List[String] = (Json.parse(response) \ "urls").as[List[String]]
+    proxiedUrls.contains(testUrl)
+  }
+
 }
 
 sealed trait ScanStatus
