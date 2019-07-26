@@ -71,10 +71,10 @@ class ZapReportSpec extends BaseSpec {
       getByAtt(reportXml, "id", "summary-info-count").text shouldBe "1"
     }
 
-    "should show the correct scan status in the Summary of Scan table when spiderScan and activeScan is not completed" in new TestSetup {
+    "should show the correct scan status in the Summary of Scan table when passiveScan, spiderScan and activeScan is not completed" in new TestSetup {
       val zapReport = ZapReport(alerts,
         "AUniqueThreshold",
-        passiveScanStatus = ScanCompleted,
+        passiveScanStatus = ScanNotCompleted,
         spiderScanStatus = ScanNotCompleted,
         activeScanStatus = ScanNotCompleted,
         missingScanners,
@@ -82,12 +82,12 @@ class ZapReportSpec extends BaseSpec {
       val reportHtmlAsString: String = generateHtmlReport(zapReport)
       val reportXml: Elem = XML.loadString(reportHtmlAsString)
 
-      getByAtt(reportXml, "id", "passive-scan").text shouldBe "Run"
+      getByAtt(reportXml, "id", "passive-scan").text shouldBe "Not Run"
       getByAtt(reportXml, "id", "spider-scan").text shouldBe "Not Run"
       getByAtt(reportXml, "id", "active-scan").text shouldBe "Not Run"
     }
 
-    "should show the correct scan status in the Summary of Scan table when spiderScan and ActiveScan is completed" in new TestSetup {
+    "should show the correct scan status in the Summary of Scan table when passiveScan, spiderScan and activeScan is completed" in new TestSetup {
       val zapReport = ZapReport(alerts,
         "AUniqueThreshold",
         passiveScanStatus = ScanCompleted,

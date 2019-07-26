@@ -18,7 +18,7 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{verify, when, atLeastOnce}
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.zap.api._
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
@@ -116,6 +116,44 @@ class ZapScanSpec extends BaseSpec {
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "99"}"""))
 
       zapScan.activeScanStatus shouldBe ScanNotCompleted
+    }
+  }
+  "Passive Scan status" should {
+    "should return ScanCompleted if test url is proxied via ZAP and passive scan is completed within the configured duration" in new TestSetup {
+
+      import zapConfiguration._
+
+      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn((200,
+        """{"urls":["http://localhost:1234/abc/de", "http://localhost:1234/abc/def", "http://localhost:1234/abc/def/ghijk"]}""".stripMargin))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
+
+      zapScan.passiveScanStatus shouldBe ScanCompleted
+      verify(httpClient).get(zapBaseUrl, "/json/core/view/urls", "baseurl" -> testUrl)
+      verify(httpClient).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
+    }
+
+    "should return ScanNotCompleted if test url is NOT proxied via ZAP" in new TestSetup {
+
+      import zapConfiguration._
+
+      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn((200,
+        """{"urls":["http://localhost:1234/abc/de"]}""".stripMargin))
+
+      zapScan.passiveScanStatus shouldBe ScanNotCompleted
+      verify(httpClient).get(zapBaseUrl, "/json/core/view/urls", "baseurl" -> testUrl)
+    }
+
+    "should return ScanNotCompleted when test url proxied via ZAP but passive scan is NOT completed within the configured duration" in new TestSetup {
+
+      import zapConfiguration._
+
+      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn((200,
+        """{"urls":["http://localhost:1234/abc/de", "http://localhost:1234/abc/def/ghijk"]}""".stripMargin))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "1"}"""))
+
+      zapScan.passiveScanStatus shouldBe ScanNotCompleted
+      verify(httpClient).get(zapBaseUrl, "/json/core/view/urls", "baseurl" -> testUrl)
+      verify(httpClient, atLeastOnce()).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
     }
   }
 }

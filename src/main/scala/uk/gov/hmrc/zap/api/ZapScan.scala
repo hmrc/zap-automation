@@ -31,11 +31,16 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
   lazy val spiderRunStatus: ScanStatus = spiderStatus
 
   lazy val passiveScanStatus: ScanStatus = {
-    if (urlProxiedForPassiveScan) {
-      ScanCompleted
+    if (isUrlProxiedViaZap) {
+      recordsToScanStatus match {
+        case ScanCompleted => ScanCompleted
+        case ScanNotCompleted =>
+          log.error(s"Passive Scan did not complete within the configured duration: $patienceConfigTimeout seconds.")
+          ScanNotCompleted
+      }
     }
-    else{
-      log.error("Test URL did not proxy via ZAP. Check if the browser is configured correctly to proxy via ZAP.")
+    else {
+      log.error(s"Test URL '$testUrl' did not proxy via ZAP. Check if the browser is configured correctly to proxy via ZAP.")
       ScanNotCompleted
     }
   }
@@ -56,6 +61,12 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
       ScanNotCompleted
   }
 
+  /*
+  /json/pscan/view/recordsToScan returns how many records left to Passive Scan. When it is 0, Passive Scan is completed.
+  Passive Scan occurs on two instances.
+  1. When Journey tests proxies requests via ZAP, passive scan is performed automatically.
+  2. When the test URL is crawled by ZAP (triggerSpiderScan()) , passive scan is performed again on the new requests and response.
+  */
   private def recordsToScanStatus: ScanStatus = {
     val recordsLeftToScan = 0
     val recordsToScan = retry(expectedResult = recordsLeftToScan) {
@@ -66,14 +77,10 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
       recordsToScan
     }
 
-    if (recordsToScan == recordsLeftToScan) {
-      log.info("Passive Scan completed.")
+    if (recordsToScan == recordsLeftToScan)
       ScanCompleted
-    }
-    else {
-      log.error(s"Spider did not complete within configured duration: $patienceConfigTimeout seconds. Still $recordsToScan records left to scan.")
+    else
       ScanNotCompleted
-    }
   }
 
   private def scanStatus(path: String): ScanStatus = {
@@ -107,10 +114,14 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
     result
   }
 
-  private def urlProxiedForPassiveScan: Boolean = {
+  /*
+  Test URL should be proxied via ZAP for passive scan to be performed.
+  */
+  private def isUrlProxiedViaZap: Boolean = {
     val response = callZapApi("/json/core/view/urls", "baseurl" -> s"$testUrl")
     val proxiedUrls: List[String] = (Json.parse(response) \ "urls").as[List[String]]
-    proxiedUrls.contains(testUrl)
+    val testUrlPattern = testUrl + ".*"
+    proxiedUrls.exists(_.matches(testUrlPattern))
   }
 
 }

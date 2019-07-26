@@ -41,8 +41,8 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
       healthCheck(zapConfiguration.testUrl)
     }
     if (zapScan.passiveScanStatus == ScanNotCompleted) {
-      throw PassiveScanException("Test URL did not proxy via ZAP. Check if the browser is configured correctly " +
-        "to proxy via ZAP.")
+      throw PassiveScanException("Test URL did not proxy via ZAP (OR) Passive Scan did not complete within configured duration." +
+        "See ERROR message in the logs above.")
     }
     zapSetup.setConnectionTimeout()
     zapSetup.checkMissingScanners
