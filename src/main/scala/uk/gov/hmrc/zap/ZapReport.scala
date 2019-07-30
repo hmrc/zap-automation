@@ -23,9 +23,8 @@ import uk.gov.hmrc.zap.logger.ZapLogger._
 
 object ZapReport {
 
-  def generateHtmlReport(relevantAlerts: List[ZapAlert], failureThreshold: String, spiderScanStatus: ScanStatus,
-                         activeScanStatus: ScanStatus, missingScanners: List[Scanner], zapVersion: String): String = {
-    report.html.index(relevantAlerts, failureThreshold, spiderScanStatus, activeScanStatus, missingScanners, zapVersion).toString()
+  def generateHtmlReport(zapReport: ZapReport): String = {
+    report.html.index(zapReport).toString()
   }
 
   def writeToFile(report: String): Unit = {
@@ -40,3 +39,6 @@ object ZapReport {
     log.info(s"HTML Report generated: file://${file.getAbsolutePath}")
   }
 }
+
+case class ZapReport(relevantAlerts: List[ZapAlert], failureThreshold: String, passiveScanStatus: ScanStatus,spiderScanStatus: ScanStatus,
+                         activeScanStatus: ScanStatus, missingScanners: List[Scanner], zapVersion: String)

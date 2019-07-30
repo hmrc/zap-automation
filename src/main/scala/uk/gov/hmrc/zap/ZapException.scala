@@ -20,6 +20,8 @@ case class ZapException(s: String) extends Exception(s)
 
 case class SpiderScanException(message: String) extends Exception(message)
 
+case class PassiveScanException(message: String) extends Exception(message)
+
 case class ActiveScanException(message: String) extends Exception(message)
 
 case class ZapAlertException(message: String) extends Exception(message)

@@ -30,6 +30,21 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
   lazy val activeScanStatus: ScanStatus = scanStatus("/json/ascan/view/status")
   lazy val spiderRunStatus: ScanStatus = spiderStatus
 
+  lazy val passiveScanStatus: ScanStatus = {
+    if (isUrlProxiedViaZap) {
+      recordsToScanStatus match {
+        case ScanCompleted => ScanCompleted
+        case ScanNotCompleted =>
+          log.error(s"Passive Scan did not complete within the configured duration: $patienceConfigTimeout seconds.")
+          ScanNotCompleted
+      }
+    }
+    else {
+      log.error(s"Test URL '$testUrl' did not proxy via ZAP. Check if the browser is configured correctly to proxy via ZAP.")
+      ScanNotCompleted
+    }
+  }
+
   def triggerSpiderScan()(implicit zapContext: ZapContext): String = {
     callZapApi("/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
   }
@@ -46,6 +61,12 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
       ScanNotCompleted
   }
 
+  /*
+  /json/pscan/view/recordsToScan returns how many records left to Passive Scan. When it is 0, Passive Scan is completed.
+  Passive Scan occurs on two instances.
+  1. When Journey tests proxies requests via ZAP, passive scan is performed automatically.
+  2. When the test URL is crawled by ZAP (triggerSpiderScan()) , passive scan is performed again on the new requests and response.
+  */
   private def recordsToScanStatus: ScanStatus = {
     val recordsLeftToScan = 0
     val recordsToScan = retry(expectedResult = recordsLeftToScan) {
@@ -92,6 +113,17 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
     }
     result
   }
+
+  /*
+  Test URL should be proxied via ZAP for passive scan to be performed.
+  */
+  private def isUrlProxiedViaZap: Boolean = {
+    val response = callZapApi("/json/core/view/urls", "baseurl" -> s"$testUrl")
+    val proxiedUrls: List[String] = (Json.parse(response) \ "urls").as[List[String]]
+    val testUrlPattern = testUrl + ".*"
+    proxiedUrls.exists(_.matches(testUrlPattern))
+  }
+
 }
 
 sealed trait ScanStatus

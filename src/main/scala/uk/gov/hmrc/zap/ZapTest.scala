@@ -40,6 +40,10 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
     if (zapConfiguration.debugHealthCheck) {
       healthCheck(zapConfiguration.testUrl)
     }
+    if (zapScan.passiveScanStatus == ScanNotCompleted) {
+      throw PassiveScanException("Test URL did not proxy via ZAP (OR) Passive Scan did not complete within configured duration." +
+        "See ERROR message in the logs above.")
+    }
     zapSetup.setConnectionTimeout()
     zapSetup.checkMissingScanners
     zapSetup.setUpPolicy
@@ -60,8 +64,10 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
   private def createTestReport(): Unit = {
     lazy val zapVersion = zapSetup.findZapVersion
 
-    writeToFile(generateHtmlReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold,
-      zapScan.spiderRunStatus, zapScan.activeScanStatus, zapSetup.checkMissingScanners, zapVersion))
+    val zapReport = ZapReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold, zapScan.passiveScanStatus,
+      zapScan.spiderRunStatus, zapScan.activeScanStatus, zapSetup.checkMissingScanners, zapVersion)
+
+    writeToFile(generateHtmlReport(zapReport))
   }
 }
 
