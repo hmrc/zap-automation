@@ -48,6 +48,15 @@ An simple example can be found [here](examples/singleConfigExample/resources/sin
 
 You can also make use of the functionality available via [typesafe configuration](https://github.com/lightbend/config) if you would like to implement multiple security tests as part of the same test suite.  See example [here](examples/multipleConfigExample/resources/multipleConfigExampleApplication.conf).
 
+If you are running agains a non-local environment (e.g. QA), you'll need to switch off the healthcheck that ZAP does to make sure the service under tests is up and running. To do this set debug.healthcheck = false
+
+```
+ debug {
+     # Checks if the testUrl configured above returns a 2xx or 3xx response and fails if it returns anything else
+     healthCheck = false
+   }
+```
+
 ### 4. Create the test
 Create a test run in your test suite by extending the ZapTest trait of the zap-automation library. The test **must** extend one of ScalaTest's [testing styles](http://www.scalatest.org/user_guide/selecting_a_style).
 
