@@ -48,7 +48,7 @@ An simple example can be found [here](examples/singleConfigExample/resources/sin
 
 You can also make use of the functionality available via [typesafe configuration](https://github.com/lightbend/config) if you would like to implement multiple security tests as part of the same test suite.  See example [here](examples/multipleConfigExample/resources/multipleConfigExampleApplication.conf).
 
-If you are running agains a non-local environment (e.g. QA), you'll need to switch off the healthcheck that ZAP does to make sure the service under tests is up and running. To do this set debug.healthcheck = false
+If you are running against a non-local environment (e.g. QA), you'll need to switch off the healthcheck that ZAP does to make sure the service under tests is up and running. To do this set debug.healthcheck = false
 
 ```
  debug {
