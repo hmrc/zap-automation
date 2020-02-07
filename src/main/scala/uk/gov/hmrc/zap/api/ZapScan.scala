@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
       }
     }
     else {
-      log.error(s"Test URL '$testUrl' did not proxy via ZAP. Check if the browser is configured correctly to proxy via ZAP.")
-      ScanNotCompleted
+      log.error(s"Test URL '$testUrl' did not proxy via ZAP. Check if the browser proxy is configured correctly.")
+      UrlsNotCaptured
     }
   }
 
@@ -134,4 +134,8 @@ case object ScanCompleted extends ScanStatus {
 
 case object ScanNotCompleted extends ScanStatus {
   override def toString = "Not Run"
+}
+
+case object UrlsNotCaptured extends ScanStatus {
+  override def toString = "Urls not captured"
 }
