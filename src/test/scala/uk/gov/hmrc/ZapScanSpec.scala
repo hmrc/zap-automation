@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ class ZapScanSpec extends BaseSpec {
     }
   }
   "Passive Scan status" should {
-    "should return ScanCompleted if test url is proxied via ZAP and passive scan is completed within the configured duration" in new TestSetup {
+    "should return ScanCompleted if testUrl is proxied via ZAP and passive scan is completed within the configured duration" in new TestSetup {
 
       import zapConfiguration._
 
@@ -132,18 +132,18 @@ class ZapScanSpec extends BaseSpec {
       verify(httpClient).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
     }
 
-    "should return ScanNotCompleted if test url is NOT proxied via ZAP" in new TestSetup {
+    "should return UrlsNotCaptured if testUrl value has NOT been proxied via ZAP" in new TestSetup {
 
       import zapConfiguration._
 
       when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn((200,
         """{"urls":["http://localhost:1234/abc/de"]}""".stripMargin))
 
-      zapScan.passiveScanStatus shouldBe ScanNotCompleted
+      zapScan.passiveScanStatus shouldBe UrlsNotCaptured
       verify(httpClient).get(zapBaseUrl, "/json/core/view/urls", "baseurl" -> testUrl)
     }
 
-    "should return ScanNotCompleted when test url proxied via ZAP but passive scan is NOT completed within the configured duration" in new TestSetup {
+    "should return ScanNotCompleted when the passive scan has NOT completed within the configured duration" in new TestSetup {
 
       import zapConfiguration._
 

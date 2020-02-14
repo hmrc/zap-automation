@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,13 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
     if (zapConfiguration.debugHealthCheck) {
       healthCheck(zapConfiguration.testUrl)
     }
-    if (zapScan.passiveScanStatus == ScanNotCompleted) {
-      throw PassiveScanException("Test URL did not proxy via ZAP (OR) Passive Scan did not complete within configured duration." +
-        "See ERROR message in the logs above.")
+
+    zapScan.passiveScanStatus match {
+      case ScanNotCompleted => throw PassiveScanException("Passive Scan did not complete within configured duration.")
+      case UrlsNotCaptured => throw PassiveScanException("The testUrl was not proxied via ZAP.  Please check your test proxy configuration.")
+      case _ =>
     }
+
     zapSetup.setConnectionTimeout()
     zapSetup.checkMissingScanners
     zapSetup.setUpPolicy
