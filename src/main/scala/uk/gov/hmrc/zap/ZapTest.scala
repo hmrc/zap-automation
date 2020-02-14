@@ -44,6 +44,7 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
     zapScan.passiveScanStatus match {
       case ScanNotCompleted => throw PassiveScanException("Passive Scan did not complete within configured duration.")
       case UrlsNotCaptured => throw PassiveScanException("The testUrl was not proxied via ZAP.  Please check your test proxy configuration.")
+      case _ =>
     }
 
     zapSetup.setConnectionTimeout()
