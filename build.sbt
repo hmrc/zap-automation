@@ -22,8 +22,6 @@ import uk.gov.hmrc.versioning.SbtGitVersioning
 val appName = "zap-automation"
 
 val compileDependencies = Seq(
-  "com.typesafe.play"      %% "play-ahc-ws-standalone" % "1.1.9",
-  "com.typesafe.play"      %% "play-json"              % "2.6.13",
   "org.slf4j"              % "slf4j-api"               % "1.7.25",
   "org.slf4j"              % "slf4j-simple"            % "1.7.25",
   "org.scalatest"          %% "scalatest"              % "3.0.3",
@@ -47,6 +45,22 @@ lazy val zapAutomation = Project(appName, file("."))
     makePublicallyAvailableOnBintray := true,
     scalaVersion := "2.11.12",
     libraryDependencies ++= compileDependencies ++ testDependencies,
-    crossScalaVersions := Seq("2.11.12"),
+    libraryDependencies := {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, scalaMajor)) if scalaMajor == 12 =>
+          libraryDependencies.value ++ Seq(
+            "com.typesafe.play"      %% "play-ahc-ws-standalone" % "2.1.2",
+            "com.typesafe.play"      %% "play-json"              % "2.8.1"
+          )
+        case Some((2, scalaMajor)) if scalaMajor == 11 =>
+          libraryDependencies.value ++ Seq(
+            "com.typesafe.play"      %% "play-ahc-ws-standalone" % "1.1.9",
+            "com.typesafe.play"      %% "play-json"              % "2.6.13"
+          )
+        case _ =>
+          libraryDependencies.value
+      }
+    },
+    crossScalaVersions := Seq("2.11.12", "2.12.7"),
     resolvers += Resolver.bintrayRepo("hmrc", "releases")
   )
