@@ -47,6 +47,6 @@ lazy val zapAutomation = Project(appName, file("."))
     makePublicallyAvailableOnBintray := true,
     scalaVersion := "2.11.12",
     libraryDependencies ++= compileDependencies ++ testDependencies,
-    crossScalaVersions := Seq("2.11.12", "2.12.7"),
+    crossScalaVersions := Seq("2.11.12", "2.12.10"),
     resolvers += Resolver.bintrayRepo("hmrc", "releases")
   )
