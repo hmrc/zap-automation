@@ -19,10 +19,12 @@ package uk.gov.hmrc.zap.client
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import play.shaded.ahc.org.asynchttpclient.exception.RemotelyClosedException
+import uk.gov.hmrc.zap.ZapException
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-
+import scala.util.control.NonFatal
 
 trait HttpClient {
 
@@ -40,15 +42,28 @@ object WsClient extends HttpClient {
 
   def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String) = {
 
-    val url = s"$zapBaseUrl$queryPath"
+    val url    = s"$zapBaseUrl$queryPath"
     val client = asyncClient
-    val response = Await.result(client.url(s"$url")
-      .withHttpHeaders("ContentType" -> "application/json;charset=utf-8")
-      .withQueryStringParameters(params: _*)
-      .get(), 60 seconds)
-
+    val response = try {
+      Await.result(
+        client
+          .url(s"$url")
+          .withHttpHeaders("ContentType" -> "application/json;charset=utf-8")
+          .withQueryStringParameters(params: _*)
+          .get(),
+        60 seconds)
+    } catch {
+      case ex: java.net.ConnectException =>
+        throw ZapException(
+          s"Request to endpoint: $url failed with exception: ${ex.getMessage}. Check if the service is running.")
+      case ex: RemotelyClosedException =>
+        throw ZapException(
+          s"Request to endpoint: $url failed with exception: ${ex.getMessage}. Check if the service can handle requests.")
+      case NonFatal(ex) =>
+        throw ZapException(
+          s"Request to endpoint: $url failed with exception: ${ex.getMessage}.")
+    }
     client.close()
-
     (response.status, response.body)
   }
 }

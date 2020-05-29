@@ -19,8 +19,6 @@ package uk.gov.hmrc.zap
 import uk.gov.hmrc.zap.client.{HttpClient, WsClient}
 import uk.gov.hmrc.zap.logger.ZapLogger._
 
-import scala.util.control.NonFatal
-
 trait HealthCheck {
 
   val httpClient: HttpClient = WsClient
@@ -32,13 +30,7 @@ trait HealthCheck {
 
     log.info(s"Performing health check for the test URL with: $healthCheckUrl")
 
-    val (status, _) = try {
-      httpClient.get(healthCheckHost, "/ping/ping")
-
-    }
-    catch {
-      case NonFatal(e) => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with exception:${e.getMessage}")
-    }
+    val (status, _) = httpClient.get(healthCheckHost, "/ping/ping")
 
     status match {
       case 200 => ()
