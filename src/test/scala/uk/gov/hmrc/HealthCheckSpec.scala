@@ -50,13 +50,6 @@ class HealthCheckSpec extends BaseSpec {
       intercept[ZapException](healthCheck(zapConfiguration.testUrl))
     }
 
-    "throw a ZapException if a non-fatal exception occurs" in new TestSetup {
-      val exception = new RuntimeException("some non-fatal exception")
-      doThrow(exception).when(httpClient).get(any(), any(), any())
-
-      intercept[ZapException](healthCheck(zapConfiguration.testUrl))
-    }
-
     "non handle fatal exceptions" in new TestSetup {
       val fatalException = new OutOfMemoryError
       doThrow(fatalException).when(httpClient).get(any(), any(), any())
