@@ -24,21 +24,20 @@ import uk.gov.hmrc.zap.api.{ZapAlerts, ZapContext, ZapScan, ZapSetUp}
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
-
 class ZapOrchestratorSpec extends BaseSpec {
 
   class TestSetup extends ZapOrchestrator {
-    val statusCode = 200
-    val responseBody = "the-response"
-    val response: (Int, String) = (statusCode, responseBody)
-    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val statusCode                                            = 200
+    val responseBody                                          = "the-response"
+    val response: (Int, String)                               = (statusCode, responseBody)
+    lazy val config: Config                                   = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
     override protected val zapConfiguration: ZapConfiguration = new ZapConfiguration(config)
-    val httpClient: HttpClient = mock[HttpClient]
-    val zapClient: ZapClient = new ZapClient(zapConfiguration, httpClient)
-    override protected val zapSetup: ZapSetUp = new ZapSetUp(zapClient)
-    override lazy val zapScan: ZapScan = new ZapScan(zapClient)
-    override lazy val zapAlerts: ZapAlerts = new ZapAlerts(zapClient)
-    implicit val zapContext: ZapContext = ZapContext("id", "name", "policy")
+    val httpClient: HttpClient                                = mock[HttpClient]
+    val zapClient: ZapClient                                  = new ZapClient(zapConfiguration, httpClient)
+    override protected val zapSetup: ZapSetUp                 = new ZapSetUp(zapClient)
+    override lazy val zapScan: ZapScan                        = new ZapScan(zapClient)
+    override lazy val zapAlerts: ZapAlerts                    = new ZapAlerts(zapClient)
+    implicit val zapContext: ZapContext                       = ZapContext("id", "name", "policy")
   }
 
   "trigger zap scan" should {
@@ -47,7 +46,8 @@ class ZapOrchestratorSpec extends BaseSpec {
 
       when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "0"}"""))
       when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200, """{"alerts": []}"""))
 
       triggerZapScan()
@@ -73,7 +73,8 @@ class ZapOrchestratorSpec extends BaseSpec {
 
       when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "1"}"""))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "1"}"""))
 
       assertThrows[SpiderScanException](triggerZapScan())
     }
@@ -84,7 +85,8 @@ class ZapOrchestratorSpec extends BaseSpec {
 
       when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "0"}"""))
       when(httpClient.get(any(), eqTo("/json/ascan/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
       when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200, """{"alerts": []}"""))
@@ -100,7 +102,8 @@ class ZapOrchestratorSpec extends BaseSpec {
 
       when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "0"}"""))
       when(httpClient.get(any(), eqTo("/json/ascan/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "99"}"""))
 
@@ -113,10 +116,14 @@ class ZapOrchestratorSpec extends BaseSpec {
 
       when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "0"}"""))
       when(httpClient.get(any(), eqTo("/json/ascan/action/scan"), any())).thenReturn(response)
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn((200, """{"alerts": [{
+      when(httpClient.get(any(), eqTo("/json/alert/view/alerts"), any())).thenReturn(
+        (
+          200,
+          """{"alerts": [{
                                                                                             "sourceid": "",
                                                                                             "other": "Other text",
                                                                                             "method": "",
@@ -135,7 +142,9 @@ class ZapOrchestratorSpec extends BaseSpec {
                                                                                             "attack": "",
                                                                                             "name": "",
                                                                                             "risk": "",
-                                                                                            "id": ""}]}"""))
+                                                                                            "id": ""}]}"""
+        )
+      )
 
       assertThrows[ZapAlertException](triggerZapScan())
     }

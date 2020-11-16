@@ -132,6 +132,22 @@ If a scanner is not listed in this config, then the alerts for this scanner will
 
 Be sure to update this configuration when new scanners are added to ZAP. 
 
+
+### Formatting code
+This library uses [Scalafmt](https://scalameta.org/scalafmt/), a code formatter for Scala. The formatting rules configured for this repository are defined within [.scalafmt.conf](.scalafmt.conf). Prior to checking in any changes to this repository, please make sure all files are formatted correctly.
+
+To apply formatting to this repository using the configured rules in [.scalafmt.conf](.scalafmt.conf) execute:
+
+```
+sbt scalafmtAll
+```
+
+To check files have been formatted as expected execute:
+
+```
+sbt scalafmtCheckAll scalafmtSbtCheck
+```
+
 ### Issues
 Please raise any issues or feedback [here](issues/)
 

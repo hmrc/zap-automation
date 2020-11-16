@@ -26,11 +26,10 @@ class ZapClientSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
-    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-    val zapConfiguration = new ZapConfiguration(config)
-    val zapApi = new ZapClient(zapConfiguration, httpClient)
+    lazy val config: Config    = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val zapConfiguration       = new ZapConfiguration(config)
+    val zapApi                 = new ZapClient(zapConfiguration, httpClient)
   }
-
 
   "callZapApiTo" should {
 
@@ -43,9 +42,7 @@ class ZapClientSpec extends BaseSpec {
 
     "fail the test when the status code is not a 200" in new TestSetup {
       when(httpClient.get(zapConfiguration.zapBaseUrl, "/someInvalidUrl")).thenReturn((400, "the-response"))
-      try {
-        zapApi.callZapApi("/someInvalidUrl")
-      }
+      try zapApi.callZapApi("/someInvalidUrl")
       catch {
         case e: ZapException => e.getMessage shouldBe "Expected response code is 200 for /someInvalidUrl, received:400"
       }

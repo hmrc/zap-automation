@@ -27,10 +27,10 @@ class ZapTearDownSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
-    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-    val zapConfiguration = new ZapConfiguration(config)
-    val zapClient = new ZapClient(zapConfiguration, httpClient)
-    val zapSetUp = new ZapSetUp(zapClient)
+    lazy val config: Config    = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val zapConfiguration       = new ZapConfiguration(config)
+    val zapClient              = new ZapClient(zapConfiguration, httpClient)
+    val zapSetUp               = new ZapSetUp(zapClient)
   }
 
   "tearDown" should {
@@ -43,7 +43,7 @@ class ZapTearDownSpec extends BaseSpec {
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
       new ZapTearDown(zapClient).removeZapSetup
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/removeContext", "contextName" -> zapContext.name)
+      verify(httpClient).get(zapBaseUrl, "/json/context/action/removeContext", "contextName"     -> zapContext.name)
       verify(httpClient).get(zapBaseUrl, "/json/ascan/action/removeScanPolicy", "scanPolicyName" -> zapContext.policy)
       verify(httpClient).get(eqTo(zapBaseUrl), eqTo("/json/core/action/deleteAllAlerts"), any())
       verify(httpClient).get(eqTo(zapBaseUrl), eqTo("/json/core/action/shutdown"), any())

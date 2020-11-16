@@ -20,13 +20,12 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, WordSpec}
 
-
 class BaseSpec extends WordSpec with Matchers with MockitoSugar {
 
-  def updateTestConfigWith(config: String): Config = {
-    ConfigFactory.parseString(config).
-      withFallback(
+  def updateTestConfigWith(config: String): Config =
+    ConfigFactory
+      .parseString(config)
+      .withFallback(
         ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
       )
-  }
 }

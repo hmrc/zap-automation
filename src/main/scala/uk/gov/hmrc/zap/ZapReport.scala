@@ -23,22 +23,28 @@ import uk.gov.hmrc.zap.logger.ZapLogger._
 
 object ZapReport {
 
-  def generateHtmlReport(zapReport: ZapReport): String = {
+  def generateHtmlReport(zapReport: ZapReport): String =
     report.html.index(zapReport).toString()
-  }
 
   def writeToFile(report: String): Unit = {
     val directory: File = new File("target/zap-reports")
     if (!directory.exists()) {
       directory.mkdir()
     }
-    val file: File = new File(s"${directory.getAbsolutePath}/ZapReport.html")
-    val writer = new BufferedWriter(new FileWriter(file))
+    val file: File      = new File(s"${directory.getAbsolutePath}/ZapReport.html")
+    val writer          = new BufferedWriter(new FileWriter(file))
     writer.write(report)
     writer.close()
     log.info(s"HTML Report generated: file://${file.getAbsolutePath}")
   }
 }
 
-case class ZapReport(relevantAlerts: List[ZapAlert], failureThreshold: String, passiveScanStatus: ScanStatus,spiderScanStatus: ScanStatus,
-                         activeScanStatus: ScanStatus, missingScanners: List[Scanner], zapVersion: String)
+case class ZapReport(
+  relevantAlerts: List[ZapAlert],
+  failureThreshold: String,
+  passiveScanStatus: ScanStatus,
+  spiderScanStatus: ScanStatus,
+  activeScanStatus: ScanStatus,
+  missingScanners: List[Scanner],
+  zapVersion: String
+)

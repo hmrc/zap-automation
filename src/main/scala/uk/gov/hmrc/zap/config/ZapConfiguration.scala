@@ -24,12 +24,15 @@ import scala.collection.JavaConversions._
 
 class ZapConfiguration(userConfig: Config) {
 
-  lazy val zapConfig: Config = userConfig.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
+  lazy val zapConfig: Config =
+    userConfig.withFallback(ConfigFactory.parseResources("reference.conf").getConfig("zap-automation-config"))
 
   if (zapConfig.getBoolean("debug.printConfig")) {
     val renderOpts = ConfigRenderOptions.defaults().setOriginComments(false).setComments(false).setJson(false)
-    log.info(s"Below Config is used by Zap Automation Library \n" +
-      zapConfig.root().render(renderOpts))
+    log.info(
+      s"Below Config is used by Zap Automation Library \n" +
+        zapConfig.root().render(renderOpts)
+    )
   }
 
   if (!debugHealthCheck) {
@@ -60,17 +63,17 @@ class ZapConfiguration(userConfig: Config) {
 
   def customRiskConf: List[Config] = zapConfig.getConfigList("customRiskConf").toList
 
-  def passiveScanners: List[Scanner] = {
-    zapConfig.getConfigList("scanners.passive")
+  def passiveScanners: List[Scanner] =
+    zapConfig
+      .getConfigList("scanners.passive")
       .toList
       .map(config => Scanner(config.getString("id"), config.getString("name"), "Passive"))
-  }
 
-  def activeScanners: List[Scanner] = {
-    zapConfig.getConfigList("scanners.active")
+  def activeScanners: List[Scanner] =
+    zapConfig
+      .getConfigList("scanners.active")
       .toList
       .map(config => Scanner(config.getString("id"), config.getString("name"), "Active"))
-  }
 
   def debugHealthCheck: Boolean = zapConfig.getBoolean("debug.healthCheck")
 

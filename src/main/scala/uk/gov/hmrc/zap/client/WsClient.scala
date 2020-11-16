@@ -35,34 +35,36 @@ trait HttpClient {
 object WsClient extends HttpClient {
 
   def asyncClient: StandaloneAhcWSClient = {
-    implicit val system: ActorSystem = ActorSystem()
+    implicit val system: ActorSystem             = ActorSystem()
     implicit val materializer: ActorMaterializer = ActorMaterializer()
     StandaloneAhcWSClient()
   }
 
   def get(zapBaseUrl: String, queryPath: String, params: (String, String)*): (Int, String) = {
 
-    val url    = s"$zapBaseUrl$queryPath"
-    val client = asyncClient
-    val response = try {
-      Await.result(
+    val url      = s"$zapBaseUrl$queryPath"
+    val client   = asyncClient
+    val response =
+      try Await.result(
         client
           .url(s"$url")
           .withHttpHeaders("ContentType" -> "application/json;charset=utf-8")
           .withQueryStringParameters(params: _*)
           .get(),
-        60 seconds)
-    } catch {
-      case ex: java.net.ConnectException =>
-        throw ZapException(
-          s"Request to endpoint: $url failed with exception: ${ex.getMessage}. Check if the service is running.")
-      case ex: RemotelyClosedException =>
-        throw ZapException(
-          s"Request to endpoint: $url failed with exception: ${ex.getMessage}. Check if the service can handle requests.")
-      case NonFatal(ex) =>
-        throw ZapException(
-          s"Request to endpoint: $url failed with exception: ${ex.getMessage}.")
-    }
+        60 seconds
+      )
+      catch {
+        case ex: java.net.ConnectException =>
+          throw ZapException(
+            s"Request to endpoint: $url failed with exception: ${ex.getMessage}. Check if the service is running."
+          )
+        case ex: RemotelyClosedException   =>
+          throw ZapException(
+            s"Request to endpoint: $url failed with exception: ${ex.getMessage}. Check if the service can handle requests."
+          )
+        case NonFatal(ex)                  =>
+          throw ZapException(s"Request to endpoint: $url failed with exception: ${ex.getMessage}.")
+      }
     client.close()
     (response.status, response.body)
   }

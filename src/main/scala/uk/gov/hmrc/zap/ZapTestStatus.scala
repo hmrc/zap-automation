@@ -23,10 +23,13 @@ object ZapTestStatus {
   def isTestSucceeded(relevantAlerts: List[ZapAlert], failureThreshold: String): Boolean = {
 
     val failingAlerts = failureThreshold match {
-      case "High" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low" || zapAlert.risk == "Medium")
+      case "High"   =>
+        relevantAlerts.filterNot(zapAlert =>
+          zapAlert.risk == "Informational" || zapAlert.risk == "Low" || zapAlert.risk == "Medium"
+        )
       case "Medium" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational" || zapAlert.risk == "Low")
-      case "Low" => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
-      case _ => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
+      case "Low"    => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
+      case _        => relevantAlerts.filterNot(zapAlert => zapAlert.risk == "Informational")
     }
     failingAlerts.isEmpty
   }

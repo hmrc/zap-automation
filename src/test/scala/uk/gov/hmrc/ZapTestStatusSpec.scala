@@ -26,9 +26,9 @@ class ZapTestStatusSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
-    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-    val zapConfiguration = new ZapConfiguration(config)
-    val zapClient = new ZapClient(zapConfiguration, httpClient)
+    lazy val config: Config    = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val zapConfiguration       = new ZapConfiguration(config)
+    val zapClient              = new ZapClient(zapConfiguration, httpClient)
   }
 
   "Zap Test" should {
