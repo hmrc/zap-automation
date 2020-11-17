@@ -24,9 +24,9 @@ trait HealthCheck {
   val httpClient: HttpClient = WsClient
 
   def healthCheck(localHostUrl: String): Unit = {
-    val localHostRegex = "http:\\/\\/localhost:\\d+".r
+    val localHostRegex  = "http:\\/\\/localhost:\\d+".r
     val healthCheckHost = localHostRegex.findFirstIn(localHostUrl).get
-    val healthCheckUrl = s"$healthCheckHost/ping/ping"
+    val healthCheckUrl  = s"$healthCheckHost/ping/ping"
 
     log.info(s"Performing health check for the test URL with: $healthCheckUrl")
 
@@ -34,7 +34,7 @@ trait HealthCheck {
 
     status match {
       case 200 => ()
-      case _ => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with status:$status")
+      case _   => throw ZapException(s"Health check failed for test URL: $healthCheckUrl with status:$status")
     }
   }
 }

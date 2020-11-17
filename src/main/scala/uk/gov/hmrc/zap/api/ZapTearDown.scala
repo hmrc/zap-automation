@@ -27,7 +27,7 @@ class ZapTearDown(zapClient: ZapClient) {
 
     log.debug(s"Removing ZAP Context (${context.name}) Policy (${context.policy}), and all alerts.")
 
-    callZapApi("/json/context/action/removeContext", "contextName" -> context.name)
+    callZapApi("/json/context/action/removeContext", "contextName"     -> context.name)
     callZapApi("/json/ascan/action/removeScanPolicy", "scanPolicyName" -> context.policy)
     callZapApi("/json/core/action/deleteAllAlerts")
 

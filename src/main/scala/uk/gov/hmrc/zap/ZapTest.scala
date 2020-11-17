@@ -30,8 +30,8 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
   val zapConfiguration: ZapConfiguration
 
   protected lazy val zapClient = new ZapClient(zapConfiguration)
-  protected lazy val zapSetup = new ZapSetUp(zapClient)
-  protected lazy val zapScan = new ZapScan(zapClient)
+  protected lazy val zapSetup  = new ZapSetUp(zapClient)
+  protected lazy val zapScan   = new ZapScan(zapClient)
   protected lazy val zapAlerts = new ZapAlerts(zapClient)
 
   implicit lazy val zapContext: ZapContext = zapSetup.initialize()
@@ -43,8 +43,9 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
 
     zapScan.passiveScanStatus match {
       case ScanNotCompleted => throw PassiveScanException("Passive Scan did not complete within configured duration.")
-      case UrlsNotCaptured => throw PassiveScanException("The testUrl was not proxied via ZAP.  Please check your test proxy configuration.")
-      case _ =>
+      case UrlsNotCaptured  =>
+        throw PassiveScanException("The testUrl was not proxied via ZAP.  Please check your test proxy configuration.")
+      case _                =>
     }
 
     zapSetup.setConnectionTimeout()
@@ -58,8 +59,7 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
 
     if (zapConfiguration.debugTearDown) {
       new ZapTearDown(zapClient).removeZapSetup
-    }
-    else {
+    } else {
       log.debug("Skipping Tear Down")
     }
   }
@@ -67,8 +67,15 @@ trait ZapTest extends BeforeAndAfterAll with HealthCheck with ZapOrchestrator {
   private def createTestReport(): Unit = {
     lazy val zapVersion = zapSetup.findZapVersion
 
-    val zapReport = ZapReport(relevantAlerts.sortBy {_.severityScore()}, zapConfiguration.failureThreshold, zapScan.passiveScanStatus,
-      zapScan.spiderRunStatus, zapScan.activeScanStatus, zapSetup.checkMissingScanners, zapVersion)
+    val zapReport = ZapReport(
+      relevantAlerts.sortBy(_.severityScore()),
+      zapConfiguration.failureThreshold,
+      zapScan.passiveScanStatus,
+      zapScan.spiderRunStatus,
+      zapScan.activeScanStatus,
+      zapSetup.checkMissingScanners,
+      zapVersion
+    )
 
     writeToFile(generateHtmlReport(zapReport))
   }
@@ -101,6 +108,5 @@ trait ZapOrchestrator {
       throw ZapAlertException(s"Zap found some new alerts - see link to HTML report above!")
     }
   }
-
 
 }

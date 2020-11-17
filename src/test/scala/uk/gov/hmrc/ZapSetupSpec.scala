@@ -27,10 +27,10 @@ class ZapSetupSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
-    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-    val zapConfiguration = new ZapConfiguration(config)
-    val zapClient = new ZapClient(zapConfiguration, httpClient)
-    val zapSetUp = new ZapSetUp(zapClient)
+    lazy val config: Config    = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val zapConfiguration       = new ZapConfiguration(config)
+    val zapClient              = new ZapClient(zapConfiguration, httpClient)
+    val zapSetUp               = new ZapSetUp(zapClient)
   }
 
   "initialize Zap setup" should {
@@ -53,9 +53,20 @@ class ZapSetupSpec extends BaseSpec {
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
 
       zapSetUp.setUpContext
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeInContext", "contextName" -> zapContext.name, "regex" -> contextBaseUrlRegex)
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> zapContext.name)
-      verify(httpClient).get(zapBaseUrl, "/json/context/action/includeContextTechnologies", "contextName" -> zapContext.name, "technologyNames" -> desiredTechnologyNames)
+      verify(httpClient).get(
+        zapBaseUrl,
+        "/json/context/action/includeInContext",
+        "contextName"                                                                        -> zapContext.name,
+        "regex"                                                                              -> contextBaseUrlRegex
+      )
+      verify(httpClient)
+        .get(zapBaseUrl, "/json/context/action/excludeAllContextTechnologies", "contextName" -> zapContext.name)
+      verify(httpClient).get(
+        zapBaseUrl,
+        "/json/context/action/includeContextTechnologies",
+        "contextName"                                                                        -> zapContext.name,
+        "technologyNames"                                                                    -> desiredTechnologyNames
+      )
     }
   }
 
@@ -72,7 +83,7 @@ class ZapSetupSpec extends BaseSpec {
     }
 
     "call the Zap API to set up the policy with scanners meant for API testing" in new TestSetup {
-      override lazy val config: Config = updateTestConfigWith("testingAnApi=true")
+      override lazy val config: Config                 = updateTestConfigWith("testingAnApi=true")
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), any(), any())).thenReturn((200, "the-response"))
@@ -103,9 +114,13 @@ class ZapSetupSpec extends BaseSpec {
 
   "checkMissingScanners should be empty when all the required scanners are available and enabled" in new TestSetup {
 
-    override lazy val config: Config = updateTestConfigWith("""scanners.passive = [{"id":"50001", "name":"testScanner"}]""".stripMargin)
+    override lazy val config: Config =
+      updateTestConfigWith("""scanners.passive = [{"id":"50001", "name":"testScanner"}]""".stripMargin)
 
-    when(httpClient.get(any(), any(), any())).thenReturn((200, """{
+    when(httpClient.get(any(), any(), any())).thenReturn(
+      (
+        200,
+        """{
                                                                  |   "scanners":[
                                                                  |      {
                                                                  |         "alertThreshold":"DEFAULT",
@@ -122,7 +137,9 @@ class ZapSetupSpec extends BaseSpec {
                                                                  |         "quality":"release"
                                                                  |      }
                                                                  |   ]
-                                                                 |}""".stripMargin))
+                                                                 |}""".stripMargin
+      )
+    )
 
     val missingScanners: List[Scanner] = zapSetUp.checkScannerSetup()
 
@@ -141,7 +158,10 @@ class ZapSetupSpec extends BaseSpec {
                                                               |   "name":"disabledScanner"
                                                               |}]""".stripMargin)
 
-    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{
+    when(httpClient.get(any(), any(), any())).thenReturn(
+      (
+        200,
+        """{
                                                                 |   "scanners":[
                                                                 |      {
                                                                 |         "alertThreshold":"DEFAULT",
@@ -158,22 +178,26 @@ class ZapSetupSpec extends BaseSpec {
                                                                 |         "quality":"release"
                                                                 |      }
                                                                 |   ]
-                                                                |}""".stripMargin))
-
+                                                                |}""".stripMargin
+      )
+    )
 
     val missingScanners: List[Scanner] = zapSetUp.checkScannerSetup()
 
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/pscan/view/scanners")
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/ascan/view/scanners")
     missingScanners.head.id shouldBe "50003"
-    missingScanners.size shouldBe 1
+    missingScanners.size    shouldBe 1
   }
-
 
   "checkMissingScanners should return list of required scanners that are not configured" in new TestSetup {
 
-    override lazy val config: Config = updateTestConfigWith("""scanners.passive=[{"id":"99999", "name":"Test Scanner"}]""")
-    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{
+    override lazy val config: Config   =
+      updateTestConfigWith("""scanners.passive=[{"id":"99999", "name":"Test Scanner"}]""")
+    when(httpClient.get(any(), any(), any())).thenReturn(
+      (
+        200,
+        """{
                                                                 |   "scanners":[
                                                                 |      {
                                                                 |         "alertThreshold":"DEFAULT",
@@ -190,19 +214,21 @@ class ZapSetupSpec extends BaseSpec {
                                                                 |         "quality":"release"
                                                                 |      }
                                                                 |   ]
-                                                                |}""".stripMargin))
+                                                                |}""".stripMargin
+      )
+    )
     val missingScanners: List[Scanner] = zapSetUp.checkScannerSetup()
 
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/pscan/view/scanners")
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/json/ascan/view/scanners")
-    missingScanners.size shouldBe 1
-    missingScanners.head.id shouldBe "99999"
+    missingScanners.size      shouldBe 1
+    missingScanners.head.id   shouldBe "99999"
     missingScanners.head.name shouldBe "Test Scanner"
   }
 
   "findZapVersion should return zap version" in new TestSetup {
 
-    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{"@version":"2.8.0"}""".stripMargin))
+    when(httpClient.get(any(), any(), any())).thenReturn((200, """{"@version":"2.8.0"}""".stripMargin))
     val zapVersion: String = zapSetUp.findZapVersion
 
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/other/core/other/jsonreport")
@@ -211,7 +237,7 @@ class ZapSetupSpec extends BaseSpec {
 
   "findZapVersion should return ZAP_VERSION_NOT_FOUND when version not returned by ZAP API" in new TestSetup {
 
-    when(httpClient.get(any(), any(), any())).thenReturn((200,"""{"@NoVersion":""}""".stripMargin))
+    when(httpClient.get(any(), any(), any())).thenReturn((200, """{"@NoVersion":""}""".stripMargin))
     val zapVersion: String = zapSetUp.findZapVersion
 
     verify(httpClient).get(zapConfiguration.zapBaseUrl, "/other/core/other/jsonreport")

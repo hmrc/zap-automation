@@ -28,50 +28,52 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
   import zapClient.zapConfiguration._
 
   lazy val activeScanStatus: ScanStatus = scanStatus("/json/ascan/view/status")
-  lazy val spiderRunStatus: ScanStatus = spiderStatus
+  lazy val spiderRunStatus: ScanStatus  = spiderStatus
 
   lazy val passiveScanStatus: ScanStatus = {
     if (isUrlProxiedViaZap) {
       recordsToScanStatus match {
-        case ScanCompleted => ScanCompleted
+        case ScanCompleted    => ScanCompleted
         case ScanNotCompleted =>
           log.error(s"Passive Scan did not complete within the configured duration: $patienceConfigTimeout seconds.")
           ScanNotCompleted
       }
-    }
-    else {
+    } else {
       log.error(s"Test URL '$testUrl' did not proxy via ZAP. Check if the browser proxy is configured correctly.")
       UrlsNotCaptured
     }
   }
 
-  def triggerSpiderScan()(implicit zapContext: ZapContext): String = {
+  def triggerSpiderScan()(implicit zapContext: ZapContext): String =
     callZapApi("/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
-  }
 
   def triggerActiveScan()(implicit zapContext: ZapContext): String = {
     log.info(s"Triggering Active Scan.")
-    callZapApi("/json/ascan/action/scan", "contextId" -> zapContext.id, "scanPolicyName" -> zapContext.policy, "url" -> testUrl)
+    callZapApi(
+      "/json/ascan/action/scan",
+      "contextId"      -> zapContext.id,
+      "scanPolicyName" -> zapContext.policy,
+      "url"            -> testUrl
+    )
   }
 
-  private def spiderStatus: ScanStatus = {
+  private def spiderStatus: ScanStatus =
     if ((scanStatus("/json/spider/view/status") == ScanCompleted) && (recordsToScanStatus == ScanCompleted))
       ScanCompleted
     else
       ScanNotCompleted
-  }
 
   /*
   /json/pscan/view/recordsToScan returns how many records left to Passive Scan. When it is 0, Passive Scan is completed.
   Passive Scan occurs on two instances.
   1. When Journey tests proxies requests via ZAP, passive scan is performed automatically.
   2. When the test URL is crawled by ZAP (triggerSpiderScan()) , passive scan is performed again on the new requests and response.
-  */
+   */
   private def recordsToScanStatus: ScanStatus = {
     val recordsLeftToScan = 0
-    val recordsToScan = retry(expectedResult = recordsLeftToScan) {
-      val path = "/json/pscan/view/recordsToScan"
-      val jsonResponse = Json.parse(callZapApi(path))
+    val recordsToScan     = retry(expectedResult = recordsLeftToScan) {
+      val path          = "/json/pscan/view/recordsToScan"
+      val jsonResponse  = Json.parse(callZapApi(path))
       val recordsToScan = (jsonResponse \ "recordsToScan").as[String].toInt
       log.debug(s"path:$path \n recordsToScan: $recordsToScan")
       recordsToScan
@@ -84,28 +86,28 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
   }
 
   private def scanStatus(path: String): ScanStatus = {
-    val status = try {
-      val percentageCompleted = 100
-      retry(expectedResult = percentageCompleted) {
-        val jsonResponse = Json.parse(callZapApi(path))
-        val status = (jsonResponse \ "status").as[String].toInt
-        log.debug(s"path:$path \n status: $status")
-        status
+    val status =
+      try {
+        val percentageCompleted = 100
+        retry(expectedResult = percentageCompleted) {
+          val jsonResponse = Json.parse(callZapApi(path))
+          val status       = (jsonResponse \ "status").as[String].toInt
+          log.debug(s"path:$path \n status: $status")
+          status
+        }
+      } catch {
+        case _: ZapException => ScanNotCompleted
       }
-    }
-    catch {
-      case _: ZapException => ScanNotCompleted
-    }
 
     status match {
       case 100 => ScanCompleted
-      case _ => ScanNotCompleted
+      case _   => ScanNotCompleted
     }
   }
 
   private def retry[A](expectedResult: A)(block: => A): A = {
     val endTime = System.currentTimeMillis + (patienceConfigTimeout * 1000)
-    var result = block
+    var result  = block
 
     while (result != expectedResult && System.currentTimeMillis < endTime) {
       Thread.sleep(patienceConfigInterval * 1000)
@@ -116,11 +118,11 @@ class ZapScan(zapClient: ZapClient) extends Eventually {
 
   /*
   Test URL should be proxied via ZAP for passive scan to be performed.
-  */
+   */
   private def isUrlProxiedViaZap: Boolean = {
-    val response = callZapApi("/json/core/view/urls", "baseurl" -> s"$testUrl")
+    val response                  = callZapApi("/json/core/view/urls", "baseurl" -> s"$testUrl")
     val proxiedUrls: List[String] = (Json.parse(response) \ "urls").as[List[String]]
-    val testUrlPattern = testUrl + ".*"
+    val testUrlPattern            = testUrl + ".*"
     proxiedUrls.exists(_.matches(testUrlPattern))
   }
 

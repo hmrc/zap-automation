@@ -22,12 +22,12 @@ import uk.gov.hmrc.versioning.SbtGitVersioning
 val appName = "zap-automation"
 
 val compileDependencies = Seq(
-  "com.typesafe.play"      %% "play-ahc-ws-standalone" % "1.1.9",
-  "com.typesafe.play"      %% "play-json"              % "2.6.13",
-  "org.slf4j"              % "slf4j-api"               % "1.7.25",
-  "org.slf4j"              % "slf4j-simple"            % "1.7.25",
-  "org.scalatest"          %% "scalatest"              % "3.0.3",
-  "org.pegdown"            % "pegdown"                 % "1.6.0",
+  "com.typesafe.play"             %% "play-ahc-ws-standalone"  % "1.1.9",
+  "com.typesafe.play"             %% "play-json"               % "2.6.13",
+  "org.slf4j"                      % "slf4j-api"               % "1.7.25",
+  "org.slf4j"                      % "slf4j-simple"            % "1.7.25",
+  "org.scalatest"                 %% "scalatest"               % "3.0.3",
+  "org.pegdown"                    % "pegdown"                 % "1.6.0",
   // force dependencies due to security flaws found in jackson-databind < 2.9.x using XRay
   "com.fasterxml.jackson.core"     % "jackson-core"            % "2.9.7",
   "com.fasterxml.jackson.core"     % "jackson-databind"        % "2.9.7",
@@ -37,7 +37,7 @@ val compileDependencies = Seq(
 )
 
 val testDependencies = Seq(
-  "org.mockito"       % "mockito-all" % "1.10.19" % "test"
+  "org.mockito" % "mockito-all" % "1.10.19" % "test"
 )
 
 lazy val zapAutomation = Project(appName, file("."))

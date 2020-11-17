@@ -18,7 +18,7 @@ package uk.gov.hmrc
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{any, eq => eqTo}
-import org.mockito.Mockito.{verify, when, atLeastOnce}
+import org.mockito.Mockito.{atLeastOnce, verify, when}
 import org.scalatest.concurrent.Eventually
 import uk.gov.hmrc.zap.api._
 import uk.gov.hmrc.zap.client.{HttpClient, ZapClient}
@@ -28,10 +28,10 @@ class ZapScanSpec extends BaseSpec {
 
   trait TestSetup {
     val httpClient: HttpClient = mock[HttpClient]
-    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-    val zapConfiguration = new ZapConfiguration(config)
-    val zapClient = new ZapClient(zapConfiguration, httpClient)
-    val zapScan = new ZapScan(zapClient)
+    lazy val config: Config    = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val zapConfiguration       = new ZapConfiguration(config)
+    val zapClient              = new ZapClient(zapConfiguration, httpClient)
+    val zapScan                = new ZapScan(zapClient)
   }
 
   "Trigger Spider scan" should {
@@ -40,31 +40,34 @@ class ZapScanSpec extends BaseSpec {
       import zapConfiguration._
 
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
-      private val statusCode = 200
-      private val responseBody = "the-response"
-      private val response = (statusCode, responseBody)
+      private val statusCode                           = 200
+      private val responseBody                         = "the-response"
+      private val response                             = (statusCode, responseBody)
 
       when(httpClient.get(any(), eqTo("/json/spider/action/scan"), any())).thenReturn(response)
 
-      zapScan.triggerSpiderScan shouldBe responseBody
+      zapScan.triggerSpiderScan                                              shouldBe responseBody
       verify(httpClient).get(zapBaseUrl, "/json/spider/action/scan", "contextName" -> zapContext.name, "url" -> testUrl)
     }
   }
 
   "Spider run status" should {
 
-    "should return ScanCompleted if spider is completed within the configured duration" in new TestSetup with Eventually {
+    "should return ScanCompleted if spider is completed within the configured duration" in new TestSetup
+      with Eventually {
       import zapConfiguration._
 
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "0"}"""))
 
       zapScan.spiderRunStatus shouldBe ScanCompleted
       verify(httpClient).get(zapBaseUrl, "/json/spider/view/status")
       verify(httpClient).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
     }
 
-    "should return ScanNotCompleted if spider is not completed within the configured time" in new TestSetup with Eventually {
+    "should return ScanNotCompleted if spider is not completed within the configured time" in new TestSetup
+      with Eventually {
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "99"}"""))
@@ -72,11 +75,13 @@ class ZapScanSpec extends BaseSpec {
       zapScan.spiderRunStatus shouldBe ScanNotCompleted
     }
 
-    "return ScanNotCompleted if passive scan for spider is not completed within the configured time" in new TestSetup with Eventually {
+    "return ScanNotCompleted if passive scan for spider is not completed within the configured time" in new TestSetup
+      with Eventually {
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), eqTo("/json/spider/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "1"}"""))
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "1"}"""))
 
       zapScan.spiderRunStatus shouldBe ScanNotCompleted
     }
@@ -87,21 +92,28 @@ class ZapScanSpec extends BaseSpec {
     "should trigger the active scan" in new TestSetup {
       import zapConfiguration._
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
-      private val statusCode = 200
-      private val responseBody = "the-response"
-      private val response = (statusCode, responseBody)
+      private val statusCode                           = 200
+      private val responseBody                         = "the-response"
+      private val response                             = (statusCode, responseBody)
 
       when(httpClient.get(any(), eqTo("/json/ascan/action/scan"), any())).thenReturn(response)
 
       zapScan.triggerActiveScan shouldBe responseBody
-      verify(httpClient).get(zapBaseUrl, "/json/ascan/action/scan", "contextId" -> zapContext.id, "scanPolicyName" -> zapContext.policy, "url" -> testUrl)
+      verify(httpClient).get(
+        zapBaseUrl,
+        "/json/ascan/action/scan",
+        "contextId"                   -> zapContext.id,
+        "scanPolicyName"              -> zapContext.policy,
+        "url"                         -> testUrl
+      )
     }
   }
 
   "Active Scan status" should {
 
-    "should return ScanCompleted if active scan is completed within the configured duration" in new TestSetup with Eventually {
-      override lazy val config: Config = updateTestConfigWith("activeScan=true")
+    "should return ScanCompleted if active scan is completed within the configured duration" in new TestSetup
+      with Eventually {
+      override lazy val config: Config                 = updateTestConfigWith("activeScan=true")
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "100"}"""))
@@ -109,8 +121,9 @@ class ZapScanSpec extends BaseSpec {
       zapScan.activeScanStatus shouldBe ScanCompleted
     }
 
-    "return ScanNotCompleted if active scan is not completed within the configured duration" in new TestSetup with Eventually {
-      override lazy val config: Config = updateTestConfigWith("activeScan=true")
+    "return ScanNotCompleted if active scan is not completed within the configured duration" in new TestSetup
+      with Eventually {
+      override lazy val config: Config                 = updateTestConfigWith("activeScan=true")
       private implicit lazy val zapContext: ZapContext = ZapContext(id = "1", name = "name", policy = "policy")
 
       when(httpClient.get(any(), eqTo("/json/ascan/view/status"), any())).thenReturn((200, """{"status": "99"}"""))
@@ -123,11 +136,16 @@ class ZapScanSpec extends BaseSpec {
 
       import zapConfiguration._
 
-      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn((200,
-        """{"urls":["http://localhost:1234/abc/de", "http://localhost:1234/abc/def", "http://localhost:1234/abc/def/ghijk"]}""".stripMargin))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "0"}"""))
+      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn(
+        (
+          200,
+          """{"urls":["http://localhost:1234/abc/de", "http://localhost:1234/abc/def", "http://localhost:1234/abc/def/ghijk"]}""".stripMargin
+        )
+      )
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "0"}"""))
 
-      zapScan.passiveScanStatus shouldBe ScanCompleted
+      zapScan.passiveScanStatus                                      shouldBe ScanCompleted
       verify(httpClient).get(zapBaseUrl, "/json/core/view/urls", "baseurl" -> testUrl)
       verify(httpClient).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
     }
@@ -136,10 +154,10 @@ class ZapScanSpec extends BaseSpec {
 
       import zapConfiguration._
 
-      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn((200,
-        """{"urls":["http://localhost:1234/abc/de"]}""".stripMargin))
+      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any()))
+        .thenReturn((200, """{"urls":["http://localhost:1234/abc/de"]}""".stripMargin))
 
-      zapScan.passiveScanStatus shouldBe UrlsNotCaptured
+      zapScan.passiveScanStatus                                      shouldBe UrlsNotCaptured
       verify(httpClient).get(zapBaseUrl, "/json/core/view/urls", "baseurl" -> testUrl)
     }
 
@@ -147,11 +165,13 @@ class ZapScanSpec extends BaseSpec {
 
       import zapConfiguration._
 
-      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn((200,
-        """{"urls":["http://localhost:1234/abc/de", "http://localhost:1234/abc/def/ghijk"]}""".stripMargin))
-      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any())).thenReturn((200, """{"recordsToScan": "1"}"""))
+      when(httpClient.get(any(), eqTo("/json/core/view/urls"), any())).thenReturn(
+        (200, """{"urls":["http://localhost:1234/abc/de", "http://localhost:1234/abc/def/ghijk"]}""".stripMargin)
+      )
+      when(httpClient.get(any(), eqTo("/json/pscan/view/recordsToScan"), any()))
+        .thenReturn((200, """{"recordsToScan": "1"}"""))
 
-      zapScan.passiveScanStatus shouldBe ScanNotCompleted
+      zapScan.passiveScanStatus                                      shouldBe ScanNotCompleted
       verify(httpClient).get(zapBaseUrl, "/json/core/view/urls", "baseurl" -> testUrl)
       verify(httpClient, atLeastOnce()).get(zapBaseUrl, "/json/pscan/view/recordsToScan")
     }

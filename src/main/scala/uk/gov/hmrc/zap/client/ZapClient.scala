@@ -19,7 +19,6 @@ package uk.gov.hmrc.zap.client
 import uk.gov.hmrc.zap.ZapException
 import uk.gov.hmrc.zap.config.ZapConfiguration
 
-
 class ZapClient(val zapConfiguration: ZapConfiguration, httpClient: HttpClient = WsClient) {
 
   def callZapApi(queryPath: String, params: (String, String)*): String = {

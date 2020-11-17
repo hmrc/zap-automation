@@ -23,14 +23,12 @@ import uk.gov.hmrc.zap.client.HttpClient
 import uk.gov.hmrc.zap.config.ZapConfiguration
 import uk.gov.hmrc.zap.{HealthCheck, ZapException}
 
-
 class HealthCheckSpec extends BaseSpec {
-
 
   trait TestSetup extends HealthCheck {
     override val httpClient: HttpClient = mock[HttpClient]
-    lazy val config: Config = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
-    val zapConfiguration = new ZapConfiguration(config)
+    lazy val config: Config             = ConfigFactory.parseResources("test.conf").getConfig("zap-automation-config")
+    val zapConfiguration                = new ZapConfiguration(config)
   }
 
   "Health Check" should {

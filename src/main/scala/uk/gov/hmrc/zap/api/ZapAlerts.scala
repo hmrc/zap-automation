@@ -40,30 +40,29 @@ class ZapAlerts(zapClient: ZapClient) {
       }
   }
 
-  def parsedAlerts: List[ZapAlert] = {
+  def parsedAlerts: List[ZapAlert] =
     if (alertUrlsToReport.isEmpty)
       getAlerts()
     else
       alertUrlsToReport.flatMap(getAlerts)
-  }
 
   def applyRiskLevel(alert: ZapAlert): ZapAlert = {
     val customRiskLevels: List[Config] = zapConfiguration.customRiskConf
 
-    customRiskLevels.find({riskInfo => alert.pluginId == riskInfo.getString("pluginId")}) match {
+    customRiskLevels.find(riskInfo => alert.pluginId == riskInfo.getString("pluginId")) match {
       case Some(riskInfo) => alert.modifyRisk(riskInfo.getString("risk"))
-      case None => alert
+      case None           => alert
     }
   }
 
   private def getAlerts(baseUrl: String = ""): List[ZapAlert] = {
     val response: String = callZapApi("/json/alert/view/alerts", "baseurl" -> baseUrl)
-    val jsonResponse = Json.parse(response)
+    val jsonResponse     = Json.parse(response)
     (jsonResponse \ "alerts").as[List[ZapAlert]]
   }
 
   def alertsToIgnore(): List[ZapAlertFilter] = {
-    val listOfAlerts: List[Config] = zapConfiguration.alertsToIgnore
+    val listOfAlerts: List[Config]             = zapConfiguration.alertsToIgnore
     val listBuffer: ListBuffer[ZapAlertFilter] = new ListBuffer[ZapAlertFilter]
 
     listOfAlerts.foreach { af: Config =>
@@ -73,55 +72,45 @@ class ZapAlerts(zapClient: ZapClient) {
   }
 }
 
-case class ZapAlert(other: String = "",
-                    method: String = "",
-                    evidence: String = "",
-                    pluginId: String = "",
-                    cweid: String,
-                    confidence: String = "",
-                    wascid: String = "",
-                    description: String = "",
-                    messageId: String = "",
-                    url: String,
-                    reference: String = "",
-                    solution: String = "",
-                    alert: String = "",
-                    param: String = "",
-                    attack: String = "",
-                    name: String = "",
-                    risk: String = "",
-                    id: String = "") {
+case class ZapAlert(
+  other: String = "",
+  method: String = "",
+  evidence: String = "",
+  pluginId: String = "",
+  cweid: String,
+  confidence: String = "",
+  wascid: String = "",
+  description: String = "",
+  messageId: String = "",
+  url: String,
+  reference: String = "",
+  solution: String = "",
+  alert: String = "",
+  param: String = "",
+  attack: String = "",
+  name: String = "",
+  risk: String = "",
+  id: String = ""
+) {
 
-  def riskShortName():String = {
+  def riskShortName(): String =
     if (risk == "Informational") "Info"
     else risk
-  }
 
-  def references(): List[String] = {
+  def references(): List[String] =
     reference.split("\\n").toList
-  }
 
-  def severityScore(): String = {
+  def severityScore(): String =
     s"${riskCodes(risk)}-${confidenceCodes(confidence)}"
-  }
 
-  val riskCodes = Map("High"->"1",
-    "Medium"->"2",
-    "Low"->"3",
-    "Informational"->"4")
+  val riskCodes = Map("High" -> "1", "Medium" -> "2", "Low" -> "3", "Informational" -> "4")
 
-  val confidenceCodes = Map("High"->"1",
-    "Medium"->"2",
-    "Low"->"3")
+  val confidenceCodes = Map("High" -> "1", "Medium" -> "2", "Low" -> "3")
 
-   def modifyRisk(newRisk: String): ZapAlert = this.copy(risk = newRisk)
+  def modifyRisk(newRisk: String): ZapAlert = this.copy(risk = newRisk)
 }
-
 
 case class ZapAlertFilter(cweid: String, url: String) {
-  def matches(zapAlert: ZapAlert): Boolean = {
+  def matches(zapAlert: ZapAlert): Boolean =
     zapAlert.url.matches(url) && zapAlert.cweid.equals(cweid)
-  }
 }
-
-
