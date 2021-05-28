@@ -1,4 +1,6 @@
-# zap-automation  [ ![Download](https://api.bintray.com/packages/hmrc/releases/zap-automation/images/download.svg) ](https://bintray.com/hmrc/releases/zap-automation/_latestVersion)
+**:warning: This library is now decommissioned in favour of a new Dynamic Application Security Testing approach.**
+
+# zap-automation 
 
 This scala library is built for use in a [Scalatest](http://www.scalatest.org/) Suite, and provides an abstraction above the [OWASP ZAP API](https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project) which allows for simple configurable execution of spider and active scans. The zap-automation library also produces a report summarising the alerts captured during scans, and can be tuned to fail your test run depending on the severity of the vulnerabilities found.
 
